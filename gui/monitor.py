@@ -1,6 +1,12 @@
+import logging
+
 from PyQt5 import QtCore
 
 from client.client import Client
+from log_config import log
+
+logger = logging.getLogger('root')
+
 
 class Monitor(QtCore.QObject):
 
@@ -13,7 +19,7 @@ class Monitor(QtCore.QObject):
         super().__init__()
 
         self.parent = parent
-        self.client = Client('127.0.0.1', 8000)
+        self.client = Client('ddimans.dyndns.org', 8000)
         self.resv_queue = self.client.recv_queue
 
     def recv_msg(self):
@@ -21,6 +27,7 @@ class Monitor(QtCore.QObject):
             data = self.resv_queue.get()
             head = data['head']
             body = data['body']
+            logger.debug("'%s':'%s' is '%s'", head['type'], head['name'], body['message'])
             if head['type'] == 'server response' and head['name'] == 'check_user':
                 self.gotCheck.emit(body)
             elif head['type'] == 'server response' and head['name'] == 'registration':

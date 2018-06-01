@@ -88,6 +88,7 @@ class Client():
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((self._host, self._port))
+            print('подключился к {}:{}'.format(self._host, self._port))
             self.start_thread()
         except:
             return 'Сервер не отвечает'

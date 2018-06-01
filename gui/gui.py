@@ -29,8 +29,9 @@ class MyWindow(QtWidgets.QMainWindow):
         self.monitor.moveToThread(self.thread)
         self.thread.started.connect(self.monitor.recv_msg)
         self.thread.start()
+        # connect = self.monitor.client.socket._closed
         connect = self.monitor.client.run()
-        if not connect:
+        if connect:
             QtWidgets.QMessageBox.warning(dialog, 'Warning!', 'Not connect')
             sys.exit()
 
