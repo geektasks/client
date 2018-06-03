@@ -5,7 +5,7 @@ from gui.main_form import Ui_MainWindow as ui_class
 
 from gui.monitor import Monitor
 from function.check import check_user
-from function.registration import registration as registr
+from function.requests import registration as registr
 
 
 class MyWindow(QtWidgets.QMainWindow):
