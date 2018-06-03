@@ -16,18 +16,16 @@ db = ClientDB.create_db(os.path.join(BASE_DIR, DB_NAME))
 
 
 class Monitor(QtCore.QObject):
-
     gotCheck = QtCore.pyqtSignal(dict)
     gotConsole = QtCore.pyqtSignal(dict)
     gotError = QtCore.pyqtSignal(dict)
-
 
     def __init__(self, parent):
         super().__init__()
 
         self.parent = parent
-        # self.client = Client('ddimans.dyndns.org', 8000)
-        self.client = Client('127.0.0.1', 8000)
+        self.client = Client('ddimans.dyndns.org', 8000)
+        # self.client = Client('127.0.0.1', 8000)
         self.resv_queue = self.client.recv_queue
 
     def recv_msg(self):
@@ -52,9 +50,11 @@ class Monitor(QtCore.QObject):
                     db.add_session_id(self.client.username, head['session_id'])
             self.resv_queue.task_done()
 
+
 if __name__ == '__main__':
     from function.requests import authorization, registration
     import os
+
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DB_NAME = 'Client_db'
 
@@ -65,4 +65,3 @@ if __name__ == '__main__':
     cl.run()
     message = authorization(name='Bob20', password='password')
     cl.send_queue.put(message)
-    # cl._send_message()
