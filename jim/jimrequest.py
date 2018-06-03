@@ -6,6 +6,7 @@ class JIMRequest:
     session_id = FieldType('session_id', 0, int)
     name = FieldType('name', '', str, 25)
     password = FieldType('password', '', str)
+    email = FieldType('email', '', str)
     description = FieldType('description', '', str)
     id = FieldType('id', 0, int)
     user = FieldType('user', '', str, 25)
@@ -16,6 +17,7 @@ class JIMRequest:
     __slots__ = {'head', session_id.name,
                  name.name,
                  password.name,
+                 email.name,
                  description.name,
                  id.name,
                  user.name,
@@ -48,9 +50,12 @@ class JIMRequest:
             self.head.pop('session_id')
         return {'head': self.head, 'body': self.body}
 
-    def registration(self, name, password):
+    def registration(self, name, password, email=None):
         '''пароль сразу хэшировать??'''
-        return JIMRequest(name=name, password=password)
+        if email:
+            return JIMRequest(name=name, password=password, email=email)
+        else:
+            return JIMRequest(name=name, password=password)
 
     def authorization(self, name, password):
         '''передавать хэш пароля??
