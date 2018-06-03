@@ -14,18 +14,5 @@ def registration(name, password, email):
     pas.update(password.encode())
     pas.update(secret.encode())
     password = pas.hexdigest()
-
-    # message = {
-    #     "head": {
-    #         "type": "action",
-    #         "name": "registration"
-    #     },
-    #     "body": {
-    #         "name": name,
-    #         "password": password
-    #     }
-    # }
     message = session.registration(name=name, password=password, email=email).jim_dict
-
-
     queue.put(message)
