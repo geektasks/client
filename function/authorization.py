@@ -1,3 +1,5 @@
+# не используем, все запросы делаются в requests
+
 from client.client import send_queue
 from jim.jimrequest import JIMRequest
 import hashlib
@@ -8,7 +10,7 @@ secret = 'secret_key'
 session = JIMRequest()
 
 
-def registration(name, password, email):
+def autorization(name, password):
     pas = hashlib.sha256()
     pas.update(name.encode())
     pas.update(password.encode())
