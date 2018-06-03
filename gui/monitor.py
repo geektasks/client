@@ -24,8 +24,12 @@ class Monitor(QtCore.QObject):
         super().__init__()
 
         self.parent = parent
+
         self.client = Client('ddimans.dyndns.org', 8000)
         # self.client = Client('127.0.0.1', 8000)
+
+        self.client = Client('127.0.0.1', 8000)
+
         self.resv_queue = self.client.recv_queue
 
     def recv_msg(self):

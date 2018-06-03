@@ -5,10 +5,14 @@ from jim.jimrequest import JIMRequest
 import hashlib
 
 queue = send_queue
+<<<<<<< HEAD
 secret = 'secret_key'
 
 session = JIMRequest()
 
+=======
+secret = 'secretkey'
+>>>>>>> master
 
 def registration(name, password, email):
     pas = hashlib.sha256()

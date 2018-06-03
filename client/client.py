@@ -19,7 +19,6 @@ class Client():
         self.lock = threading.Lock()
         self.recv_queue = queue.Queue()
         self.send_queue = send_queue
-        self.secret = 'secretkey'
 
     @property
     def username(self):
@@ -32,47 +31,6 @@ class Client():
     @property
     def socket(self):
         return self._sock
-
-    def connect_guest(self, name, password):
-        # Функция авторизации пользователя
-        pass
-
-    # def registration(self, name, password, email):
-    #     pas = hashlib.sha256()
-    #     pas.update(self.username.encode())
-    #     pas.update(password.encode())
-    #     pas.update(self.secret.encode())
-    #     password = pas.hexdigest()
-    #     message = {
-    #         "head": {
-    #             "type": "action",
-    #             "name": "registration"
-    #         },
-    #         "body": {
-    #             "name": name,
-    #             "password": password
-    #         }
-    #     }
-    #     message = json_to_bytes(message)
-    #     self.socket.send(message)
-
-    # def check_user(self, name):
-    #     message = {
-    #         "head": {
-    #             "type": "action",
-    #             "name": "check_user"
-    #         },
-    #         "body": {
-    #             "name": name
-    #         }
-    #     }
-    #     msg = json_to_bytes(message)
-    #     # time.sleep(0.2)  # непонятная задержка которая нужна при JSON
-    #     self.socket.send(msg)
-
-    def add_task(self):
-        # функция добавления задачи
-        pass
 
     def _send_message(self):
         while 1:
