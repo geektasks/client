@@ -6,6 +6,7 @@ from gui.main_form import Ui_MainWindow as ui_class
 from gui.monitor import Monitor
 from function.check import check_user
 from function.requests import registration as registr
+from function.requests import authorization as auth
 
 
 class MyWindow(QtWidgets.QMainWindow):
@@ -68,6 +69,8 @@ class MyWindow(QtWidgets.QMainWindow):
             name = dialog_reg.login.text()
             password = dialog_reg.password.text()
             email = dialog_reg.email.text()
+            self.monitor.client.username = name######## при регистрации запоминаем имя пользователя, при авторизации делать тоже самое
+                                                    ### если авторизация прошла, пишем в бд
             self.fields_checker(name, password, dialog_reg)
             if dialog_reg.flag:
                 registr(name, password, email)
