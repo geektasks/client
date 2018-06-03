@@ -50,6 +50,9 @@ class JIMRequest:
             self.head.pop('session_id')
         return {'head': self.head, 'body': self.body}
 
+    def check_user(self, name):
+        return JIMRequest(name=name)
+
     def registration(self, name, password, email=None):
         '''пароль сразу хэшировать??'''
         if email:
@@ -73,6 +76,8 @@ class JIMRequest:
             return JIMRequest(session_id=self.session_id, id=task_id, name=name)
         if description:
             return JIMRequest(session_id=self.session_id, id=task_id, description=description)
+        if name and description:
+            return JIMRequest(session_id=self.session_id, id=task_id, name=name, description=description)
 
     def grant_access(self, task_id, user):
         return JIMRequest(session_id=self.session_id, id=task_id, user=user)
@@ -105,6 +110,12 @@ class JIMRequest:
 
 if __name__ == '__main__':
     session = JIMRequest(session_id=200)
+
+    session.session_id = 1
+    print(session.session_id)
+
+    check = session.check_user('User').jim_dict
+    print('check user', check)
 
     registr = session.registration('Jack', '123').jim_dict
     print('registration', registr)
