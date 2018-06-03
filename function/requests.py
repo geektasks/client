@@ -32,6 +32,11 @@ def check_user(name):
 
 
 def authorization(name, password):
+    pas = hashlib.sha256()
+    pas.update(name.encode())
+    pas.update(password.encode())
+    pas.update(secret.encode())
+    password = pas.hexdigest()
     message = session.authorization(name=name, password=password).jim_dict
     queue.put(message)
 
