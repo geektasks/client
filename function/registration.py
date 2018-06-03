@@ -7,12 +7,14 @@ secret = 'secret_key'
 
 session = JIMRequest()
 
+
 def registration(name, password, email):
     pas = hashlib.sha256()
     pas.update(name.encode())
     pas.update(password.encode())
     pas.update(secret.encode())
     password = pas.hexdigest()
+
     # message = {
     #     "head": {
     #         "type": "action",
@@ -24,4 +26,6 @@ def registration(name, password, email):
     #     }
     # }
     message = session.registration(name=name, password=password, email=email).jim_dict
+
+
     queue.put(message)

@@ -4,7 +4,8 @@ from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from gui.main_form import Ui_MainWindow as ui_class
 
 from gui.monitor import Monitor
-
+from function.check import check_user
+from function.registration import registration as registr
 
 
 class MyWindow(QtWidgets.QMainWindow):
@@ -69,14 +70,14 @@ class MyWindow(QtWidgets.QMainWindow):
             email = dialog_reg.email.text()
             self.fields_checker(name, password, dialog_reg)
             if dialog_reg.flag:
-                self.monitor.client.registration(name, password, email)
+                registr(name, password, email)
             else:
                 QtWidgets.QMessageBox.warning(dialog_reg, 'Warning!', 'Uncorrect name')
                 self.registration()
 
-        def check_login(monitor):
+        def check_login():
             text = dialog_reg.login.text()
-            monitor.client.check_user(text)
+            check_user(text)
 
         @QtCore.pyqtSlot(dict)
         def label_check_user(body):
@@ -93,7 +94,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
 
         self.monitor.gotCheck.connect(label_check_user)
-        dialog_reg.login.textChanged.connect(lambda: check_login(self.monitor))
+        dialog_reg.login.textChanged.connect(lambda: check_login())
         dialog_reg.ok.clicked.connect(reg)
         dialog_reg.cancel.clicked.connect(dialog_reg.close)
         dialog_reg.cancel.clicked.connect(self.sign_in)
