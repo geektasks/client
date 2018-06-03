@@ -9,9 +9,9 @@ from jim.convert import json_to_bytes, bytes_to_json
 logger = logging.getLogger('root')
 send_queue = queue.Queue()
 
-class Client():
 
-    username = ''
+class Client():
+    _username = ''
 
     def __init__(self, host, port):
         self._host = host
@@ -19,6 +19,14 @@ class Client():
         self.lock = threading.Lock()
         self.recv_queue = queue.Queue()
         self.send_queue = send_queue
+
+    @property
+    def username(self):
+        return self._username
+
+    @username.setter
+    def username(self, value):
+        self._username = value
 
     @property
     def socket(self):
@@ -30,12 +38,12 @@ class Client():
             if data:
                 msg = json_to_bytes(data)
                 self.socket.send(msg)
+                print('sent: ', msg)
             self.send_queue.task_done()
-
 
     def _get_message(self):
 
-        #получение сообщений от сервера, пока только вывод в консоль, сервер без бд поэтому просто пересылает сообщение
+        # получение сообщений от сервера, пока только вывод в консоль, сервер без бд поэтому просто пересылает сообщение
 
         sock = self.socket
         cont_l = []
@@ -44,6 +52,7 @@ class Client():
                 sock.settimeout(12)
                 data_recv = sock.recv(1024)
                 data_recv = bytes_to_json(data_recv)
+                print('received: ', data_recv)  ###########
                 self.recv_queue.put(data_recv)
 
             except socket.timeout:
@@ -57,7 +66,6 @@ class Client():
         t1.start()
         t2.start()
 
-
     def run(self):
         try:
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -66,3 +74,7 @@ class Client():
             self.start_thread()
         except:
             return 'Сервер не отвечает'
+
+
+if __name__ == '__main__':
+    pass
