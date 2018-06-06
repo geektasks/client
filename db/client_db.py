@@ -36,7 +36,12 @@ class ClientDB:
         Инициализация класса доступа к БД
         :param db_name: имя БД
         """
-        self.conn = sqlite3.connect(db_name)
+        self.db_name = db_name
+        self.conn = None
+        self.cursor = None
+
+    def connect(self):
+        self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor()
 
     @classmethod
@@ -110,6 +115,8 @@ class ClientDB:
                               session_identificator TEXT,
                               FOREIGN KEY (user_id) REFERENCES users(user_id))
                               """)
+
+        conn.close()
 
         return cls(db_name)
 
