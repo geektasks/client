@@ -63,10 +63,13 @@ class FatThing(asyncio.Protocol):
         :return: None
         """
         try:
-            load_message = json.loads(message)
-            self.QUEUE_HANDLERS[load_message["head"]["type"]][load_message["head"]["name"]](load_message)
-        except (json.decoder.JSONDecodeError, TypeError, KeyError):
-            self.DEFAULT_QUEUE_HANDLER(message)
+            self.QUEUE_HANDLERS[message["head"]["type"]][message["head"]["name"]](message)
+        except TypeError:
+            try:
+                load_message = json.loads(message)
+                self.QUEUE_HANDLERS[load_message["head"]["type"]][load_message["head"]["name"]](load_message)
+            except (json.decoder.JSONDecodeError, TypeError, KeyError):
+                self.DEFAULT_QUEUE_HANDLER(message)
 
     async def _queue_handler_loop(self):
         """
