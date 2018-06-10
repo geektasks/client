@@ -69,7 +69,7 @@ class JIMRequest:
         return JIMRequest(session_id=self.session_id, name=username)
 
     def create_task(self, name, description):
-        return JIMRequest(name=name, description=description)
+        return JIMRequest(session_id=self.session_id, name=name, description=description)
 
     def edit_task(self, task_id, name=None, description=None):
         if name:
