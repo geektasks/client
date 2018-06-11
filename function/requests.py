@@ -97,4 +97,4 @@ def delete_comment(comment_id):
 
 
 if __name__ == '__main__':
-    print(session_id)
+    pass
