@@ -109,7 +109,13 @@ class JIMRequest:
 
 
 if __name__ == '__main__':
-    session = JIMRequest(session_id=200)
+    session = JIMRequest()
+
+    session.session_id = 1
+    print(session.session_id)
+
+    check = session.check_user('User').jim_dict
+    print('check user', check)
 
     session.session_id = 1
     print(session.session_id)
@@ -128,6 +134,9 @@ if __name__ == '__main__':
 
     create_task = session.create_task(name='New', description='new description').jim_dict
     print('create', create_task)
+
+    print('-' * 50)
+    # session.session_id = 0
 
     edit_name = session.edit_task(task_id=1, name='Edit name').jim_dict
     print('edit name', edit_name)

@@ -1,34 +1,29 @@
-from client.client import send_queue
 from jim.jimrequest import JIMRequest
-from db.client_db import ClientDB
 import hashlib
+import fat.handlers as handlers
 
-queue = send_queue
 secret = 'secret_key'
 
-db = ClientDB('client_db_1')
-user_name = 'Jack'  # как будем получать имя текущего (залогиненного) пользователя?
-
-try:
-    session_id = db.get_session_id(user_name)  # получаем из бд, если авторизация (регистрация?) ок
-except:
-    session_id = 0
-session = JIMRequest(session_id=session_id)
+# session_id = handlers.handler.data['session id']
+# username = handlers.handler.data['username']
 
 
-def registration(name, password, email):
+session = JIMRequest()
+
+
+def registration(name, password, email=None):
     pas = hashlib.sha256()
     pas.update(name.encode())
     pas.update(password.encode())
     pas.update(secret.encode())
     password = pas.hexdigest()
     message = session.registration(name=name, password=password, email=email).jim_dict
-    queue.put(message)
+    return message
 
 
 def check_user(name):
     message = session.check_user(name=name).jim_dict
-    queue.put(message)
+    return message
 
 
 def authorization(name, password):
@@ -38,58 +33,67 @@ def authorization(name, password):
     pas.update(secret.encode())
     password = pas.hexdigest()
     message = session.authorization(name=name, password=password).jim_dict
-    queue.put(message)
+    return message
 
 
 def presence(name):
     message = session.presence(username=name).jim_dict
-    queue.put(message)
+    return message
 
 
 def create_task(name, description):
-    message = session.create_task(name=name, description=description)
-    queue.put(message)
+    print(handlers.handler.data['session_id'])
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print(err)
+    message = session.create_task(name=name, description=description).jim_dict
+    return message
 
 
 def edit_task(task_id, name=None, description=None):
-    message = session.edit_task(task_id=task_id, name=name, description=description)
-    queue.put(message)
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print(err)
+    message = session.edit_task(task_id=task_id, name=name, description=description).jim_dict
+    return message
 
 
 def grant_access(task_id, user):
-    message = session.grant_access(task_id=task_id, user=user)
-    queue.put(message)
+    message = session.grant_access(task_id=task_id, user=user).jim_dict
+    return message
 
 
 def deny_access(task_id, user):
-    message = session.deny_access(task_id=task_id, user=user)
-    queue.put(message)
+    message = session.deny_access(task_id=task_id, user=user).jim_dict
+    return message
 
 
 def assign_performer(task_id, user=None):
-    message = session.assign_performer(task_id=task_id, user=user)
-    queue.put(message)
+    message = session.assign_performer(task_id=task_id, user=user).jim_dict
+    return message
 
 
 def remove_performer(task_id, user=None):
-    message = session.remove_performer(task_id=task_id, user=user)
-    queue.put(message)
+    message = session.remove_performer(task_id=task_id, user=user).jim_dict
+    return message
 
 
 def change_status(task_id, status):
     '''status == 0 / 1 / 2 '''
-    message = session.change_status(task_id=task_id, status=status)
-    queue.put(message)
+    message = session.change_status(task_id=task_id, status=status).jim_dict
+    return message
 
 
 def create_comment(task_id, text, time):
-    message = session.create_comment(task_id=task_id, text=text, time=time)
-    queue.put(message)
+    message = session.create_comment(task_id=task_id, text=text, time=time).jim_dict
+    return message
 
 
 def delete_comment(comment_id):
-    message = session.delete_comment(comment_id=comment_id)
-    queue.put(message)
+    message = session.delete_comment(comment_id=comment_id).jim_dict
+    return message
 
 
 if __name__ == '__main__':
