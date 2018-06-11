@@ -1,4 +1,5 @@
 import fat.handlers_base as handlers_base
+
 """
 Инструкция по созданию функций-обработчиков сообщений
 
@@ -82,48 +83,50 @@ D. Функция, вызываемая в случае отключенного
 * декорируемые функции могут иметь одинаковые названия
 """
 
-handler = handlers_base.FatThing("127.0.0.1", 8888, "my_db.sqlite")
+# handler = handlers_base.FatThing("127.0.0.1", 8888, "my_db.sqlite")
+# handler = handlers_base.FatThing("127.0.0.1", 8000, "my_db.sqlite")
 
 
-# Пример инициализирующей функции
-@handler.init_func
-def init_func():
-    print("Инициализирующая функция!!!")
+handler = handlers_base.FatThing("ddimans.dyndns.org", 8000, "my_db.sqlite")
 
 
-# Пример назначения обработчика по умолчанию
-@handler.default_queue_handler
-def handler_func(message):
-    print("Call default queue message handler. Message:", message)
+@handler.conditional_queue_handler("action", "registration")
+def registration(message):
+    username = message['body']['name']
+    data['username'] = username
     block_queue()
     send_message(message)
 
 
-# Пример назначения условного обработчика
-@handler.conditional_queue_handler("action", "hello")
-def handler_func(message):
-    print("Call conditional queue message handler (type — \"action\", name — \"hello\"). Message:", message)
+@handler.conditional_queue_handler("action", "authorization")
+def authorization(message):
+    username = message['body']['name']
+    data['username'] = username
     block_queue()
     send_message(message)
 
 
-# Пример назначения обработчика по умолчанию
-@handler.default_socket_handler
-def handler_func(message):
-    print("Call default socket message handler. Message:", message)
+@handler.conditional_socket_handler("server response", "authorization")
+def authorization(message):
+    session_id = message['body']['session id']
+    data['session_id'] = int(session_id)
+    db.add_session_id(data['username'], session_id)
     put_message(message)
     release_queue()
 
 
-# Пример назначения условного обработчика
-@handler.conditional_socket_handler("action", "hello")
-def handler_func(message):
-    print("Call conditional socket message handler (type — \"action\", name — \"hello\"). Message:", message)
-    put_message(message)
-    release_queue()
+@handler.conditional_queue_handler('action', 'create task')
+def create_task(message):
+    print('cr task', message)
+    block_queue()
+    send_message(message)
 
 
-# Пример функции, вызываемой при неудачном подключении к серверу
-@handler.connection_refused_func
-def handler_func():
-    print("Can't connect...")
+@handler.conditional_queue_handler('action', 'edit task')
+def create_task(message):
+    print('edit task', message)
+    block_queue()
+    send_message(message)
+
+# @handler.conditional_socket_handler('server response', 'check user')
+# def check_user(message):

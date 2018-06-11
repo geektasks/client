@@ -10,31 +10,44 @@
 # Импорт handlers
 import fat.handlers as handlers
 
+import function.requests as request
+
+
 # Запуск обработчика в другом потоке
 handlers.handler.run()
+
+
 
 # Получаем очереди
 input_queue = handlers.handler.input_queue
 
 # Создаем сообщение и отправляем сообщение во входную очередь обработчика
-message = "Привет, это первое отправленное сообщение!"
+message = request.registration('Bobby', '123')
+# message = request.authorization('Bobby', '123')
 input_queue.put(message)
 
 # Ожидаем 7 секунд
 import time
-time.sleep(7)
+time.sleep(3)
 
-# Еще раз отправляем сообщение во входную очередь обработчика
-message = """{"head": {"type": "action", "name": "hello"}, "body": "lol"}"""
-input_queue.put(message)
+# message = request.create_task(name='Task', description='Description')
+# print(message)
+# input_queue.put(message)
 
-# Ожидаем 10 секунд
-time.sleep(10)
+# time.sleep(2)
+
+# message = request.edit_task(task_id=1, name='Taaask')
+# print(message)
+# input_queue.put(message)
+
+# time.sleep(2)
+
+print(handlers.handler.data)
 
 # Заберем из очереди сообщения
-output_queue = handlers.handler.output_queue
-print(output_queue.get())
-print(output_queue.get())
+# output_queue = handlers.handler.output_queue
+# print(output_queue.get())
+# print(output_queue.get())
 
 # Завершаем работу
 handlers.handler.stop()

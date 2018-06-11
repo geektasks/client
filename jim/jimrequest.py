@@ -6,6 +6,7 @@ class JIMRequest:
     session_id = FieldType('session_id', 0, int)
     name = FieldType('name', '', str, 25)
     password = FieldType('password', '', str)
+    email = FieldType('email', '', str)
     description = FieldType('description', '', str)
     id = FieldType('id', 0, int)
     user = FieldType('user', '', str, 25)
@@ -16,6 +17,7 @@ class JIMRequest:
     __slots__ = {'head', session_id.name,
                  name.name,
                  password.name,
+                 email.name,
                  description.name,
                  id.name,
                  user.name,
@@ -48,9 +50,15 @@ class JIMRequest:
             self.head.pop('session_id')
         return {'head': self.head, 'body': self.body}
 
-    def registration(self, name, password):
+    def check_user(self, name):
+        return JIMRequest(name=name)
+
+    def registration(self, name, password, email=None):
         '''пароль сразу хэшировать??'''
-        return JIMRequest(name=name, password=password)
+        if email:
+            return JIMRequest(name=name, password=password, email=email)
+        else:
+            return JIMRequest(name=name, password=password)
 
     def authorization(self, name, password):
         '''передавать хэш пароля??
@@ -61,13 +69,15 @@ class JIMRequest:
         return JIMRequest(session_id=self.session_id, name=username)
 
     def create_task(self, name, description):
-        return JIMRequest(name=name, description=description)
+        return JIMRequest(session_id=self.session_id, name=name, description=description)
 
     def edit_task(self, task_id, name=None, description=None):
         if name:
             return JIMRequest(session_id=self.session_id, id=task_id, name=name)
         if description:
             return JIMRequest(session_id=self.session_id, id=task_id, description=description)
+        if name and description:
+            return JIMRequest(session_id=self.session_id, id=task_id, name=name, description=description)
 
     def grant_access(self, task_id, user):
         return JIMRequest(session_id=self.session_id, id=task_id, user=user)
@@ -99,7 +109,13 @@ class JIMRequest:
 
 
 if __name__ == '__main__':
-    session = JIMRequest(session_id=200)
+    session = JIMRequest()
+
+    session.session_id = 1
+    print(session.session_id)
+
+    check = session.check_user('User').jim_dict
+    print('check user', check)
 
     registr = session.registration('Jack', '123').jim_dict
     print('registration', registr)
@@ -112,6 +128,9 @@ if __name__ == '__main__':
 
     create_task = session.create_task(name='New', description='new description').jim_dict
     print('create', create_task)
+
+    print('-' * 50)
+    # session.session_id = 0
 
     edit_name = session.edit_task(task_id=1, name='Edit name').jim_dict
     print('edit name', edit_name)

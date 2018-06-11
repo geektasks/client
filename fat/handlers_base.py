@@ -19,7 +19,7 @@ class FatThing(asyncio.Protocol):
         self.db = client_db.ClientDB.create_db(db_name)
         self.input_queue = queue.Queue()
         self.output_queue = queue.Queue()
-        self.data = {}
+        self.data = {'session_id': None, 'username': None}
         self._host = host
         self._port = port
         self._transport = None
@@ -52,6 +52,7 @@ class FatThing(asyncio.Protocol):
         """
         try:
             load_message = json.loads(message)
+            # print('--', self.SOCKET_HANDLERS['action'])
             self.SOCKET_HANDLERS[load_message["head"]["type"]][load_message["head"]["name"]](load_message)
         except (json.decoder.JSONDecodeError, TypeError, KeyError):
             self.DEFAULT_SOCKET_HANDLER(message)
