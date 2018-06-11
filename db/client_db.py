@@ -283,6 +283,13 @@ class ClientDB:
             tasks.append(self.get_task(id[0]))
         return tasks
 
+    def get_task_id_by_name(self, task_name):
+        self.cursor.execute("""SELECT task_id FROM tasks WHERE task_name = ?""", [task_name])
+        task_id = self.cursor.fetchone()
+        return task_id
+
+
+
     def get_task(self, task_id):
         """
         Получить задачу из БД
