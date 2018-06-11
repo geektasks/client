@@ -117,6 +117,12 @@ if __name__ == '__main__':
     check = session.check_user('User').jim_dict
     print('check user', check)
 
+    session.session_id = 1
+    print(session.session_id)
+
+    check = session.check_user('User').jim_dict
+    print('check user', check)
+
     registr = session.registration('Jack', '123').jim_dict
     print('registration', registr)
 

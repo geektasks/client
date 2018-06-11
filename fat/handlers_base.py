@@ -2,7 +2,7 @@ import asyncio
 import queue
 import json
 import threading
-import db.client_db as client_db
+# import db.client_db as client_db
 import concurrent.futures
 
 
@@ -13,10 +13,10 @@ class FatThing(asyncio.Protocol):
     QUEUE_HANDLERS = {}
     DEFAULT_QUEUE_HANDLER = lambda *args, **kwargs: None
     INIT_FUNC = lambda *args, **kwargs: None
+    STOP_FUNC = lambda *args, **kwargs: None
     CONNECTION_REFUSED = lambda *args, **kwargs: None
 
-    def __init__(self, host, port, db_name):
-        self.db = client_db.ClientDB.create_db(db_name)
+    def __init__(self, host, port):
         self.input_queue = queue.Queue()
         self.output_queue = queue.Queue()
         self.data = {'session_id': None, 'username': None}
@@ -25,10 +25,18 @@ class FatThing(asyncio.Protocol):
         self._transport = None
         self._loop = asyncio.get_event_loop()
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        self._event = asyncio.Event()
-        self._event.set()
+        self._queue_handling_event = asyncio.Event(loop=self._loop)
+        self._queue_handling_event.set()
         self._connect()
         self._loop.create_task(self._queue_handler_loop())
+
+    async def _timer(self):
+        """
+        Хз, зачем оно надо, но без него не работает. Нужно советоваться с опытными питонистами :(
+        :return: None
+        """
+        while True:
+            await asyncio.sleep(10)
 
     def _connect(self):
         """
@@ -39,6 +47,10 @@ class FatThing(asyncio.Protocol):
             self._loop.create_task(self._create_connection())
 
     async def _create_connection(self):
+        """
+        Создать подключение к серверу
+        :return: None
+        """
         try:
             await self._loop.create_connection(lambda: self, self._host, self._port)
         except ConnectionRefusedError:
@@ -52,7 +64,6 @@ class FatThing(asyncio.Protocol):
         """
         try:
             load_message = json.loads(message)
-            # print('--', self.SOCKET_HANDLERS['action'])
             self.SOCKET_HANDLERS[load_message["head"]["type"]][load_message["head"]["name"]](load_message)
         except (json.decoder.JSONDecodeError, TypeError, KeyError):
             self.DEFAULT_SOCKET_HANDLER(message)
@@ -78,8 +89,9 @@ class FatThing(asyncio.Protocol):
         :return: None
         """
         while True:
+
             message = await self._loop.run_in_executor(self._executor, self.input_queue.get)
-            await self._event.wait()
+            await self._queue_handling_event.wait()
             self._handle_queue_message(message)
 
     def _lock_queue_handle(self):
@@ -87,16 +99,16 @@ class FatThing(asyncio.Protocol):
         Заблокировать обработку сообщений из очереди
         :return: None
         """
-        if self._event.is_set():
-            self._event.clear()
+        if self._queue_handling_event.is_set():
+            self._queue_handling_event.clear()
 
     def _release_queue_handle(self):
         """
         Разблокировать обработку сообщений из очереди
         :return:
         """
-        if not self._event.is_set():
-            self._event.set()
+        if not self._queue_handling_event.is_set():
+            self._queue_handling_event.set()
 
     def _send_message(self, message):
         """
@@ -115,6 +127,15 @@ class FatThing(asyncio.Protocol):
         except AttributeError:
             self._loop.call_later(1, self._connect)
             self._loop.call_later(2, self._send_message, message)
+
+    def _stop(self):
+        """
+        Завершение работы обработчика
+        :return: None
+        """
+        self.STOP_FUNC()
+        self.input_queue.put(None)
+        self._loop.stop()
 
     def connection_made(self, transport):
         """
@@ -162,7 +183,6 @@ class FatThing(asyncio.Protocol):
             """
             func.__globals__["send_message"] = handler._send_message
             func.__globals__["put_message"] = handler.output_queue.put
-            func.__globals__["db"] = handler.db
             func.__globals__["block_queue"] = handler._lock_queue_handle
             func.__globals__["release_queue"] = handler._release_queue_handle
             func.__globals__["data"] = handler.data
@@ -181,7 +201,6 @@ class FatThing(asyncio.Protocol):
         """
         func.__globals__["send_message"] = self._send_message
         func.__globals__["put_message"] = self.output_queue.put
-        func.__globals__["db"] = self.db
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
@@ -206,7 +225,6 @@ class FatThing(asyncio.Protocol):
             """
             func.__globals__["send_message"] = handler._send_message
             func.__globals__["put_message"] = handler.output_queue.put
-            func.__globals__["db"] = handler.db
             func.__globals__["block_queue"] = handler._lock_queue_handle
             func.__globals__["release_queue"] = handler._release_queue_handle
             func.__globals__["data"] = handler.data
@@ -225,7 +243,6 @@ class FatThing(asyncio.Protocol):
         """
         func.__globals__["send_message"] = self._send_message
         func.__globals__["put_message"] = self.output_queue.put
-        func.__globals__["db"] = self.db
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
@@ -241,12 +258,26 @@ class FatThing(asyncio.Protocol):
         """
         func.__globals__["send_message"] = self._send_message
         func.__globals__["put_message"] = self.output_queue.put
-        func.__globals__["db"] = self.db
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
         self.INIT_FUNC = func
         print("Function \"{}\" assigned as init func.".format(func.__name__))
+        return func
+
+    def stop_func(self, func):
+        """
+        Назначить инициализирующую функцию-обработчик
+        :param func: назначаемая функция
+        :return: назначаемая функция
+        """
+        func.__globals__["send_message"] = self._send_message
+        func.__globals__["put_message"] = self.output_queue.put
+        func.__globals__["block_queue"] = self._lock_queue_handle
+        func.__globals__["release_queue"] = self._release_queue_handle
+        func.__globals__["data"] = self.data
+        self.STOP_FUNC = func
+        print("Function \"{}\" assigned as stop func.".format(func.__name__))
         return func
 
     def connection_refused_func(self, func):
@@ -257,12 +288,11 @@ class FatThing(asyncio.Protocol):
         """
         func.__globals__["send_message"] = self._send_message
         func.__globals__["put_message"] = self.output_queue.put
-        func.__globals__["db"] = self.db
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
         self.CONNECTION_REFUSED = func
-        print("Function \"{}\" assigned as init func.".format(func.__name__))
+        print("Function \"{}\" assigned as connection refused func.".format(func.__name__))
         return func
 
     def run(self):
@@ -270,8 +300,8 @@ class FatThing(asyncio.Protocol):
         Запустить обработчик в отделном процессе
         :return: None
         """
-        self._loop.call_soon(self.db.connect)
         self._loop.call_soon(self.INIT_FUNC)
+        self._loop.create_task(self._timer())
         self._thread = threading.Thread(target=self._loop.run_forever, daemon=True)
         self._thread.start()
 
@@ -280,8 +310,5 @@ class FatThing(asyncio.Protocol):
         Остановить работу обработчика
         :return: None
         """
-        self._loop.stop()
-        self.input_queue.put(None)
-
-
-
+        self._loop.call_soon(self._stop)
+        self._thread.join()

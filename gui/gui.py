@@ -77,6 +77,8 @@ class MyWindow(QtWidgets.QMainWindow):
             name = dialog_reg.login.text()
             password = dialog_reg.password.text()
             email = dialog_reg.email.text()
+            self.monitor.client.username = name######## при регистрации запоминаем имя пользователя, при авторизации делать тоже самое
+                                                    ### если авторизация прошла, пишем в бд
             self.fields_checker(name, password, dialog_reg)
             if dialog_reg.flag:
                 # self.monitor.client.registration(name, password, email)
