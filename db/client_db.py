@@ -8,7 +8,9 @@ import sqlite3
         db = ClientDB.create_db(db_name) 
     2. Уверены, что БД уже создана (если не уверены, то делаем 1-й шаг, второй не нужно)
         db = ClientDB(db_name) 
-    3. Радоваться и юзать.
+    3. Подключиться к БД
+        db.connect()
+    4. Радоваться и юзать.
 
 Б. Для сохранения идентификатора сессии (db — экзампляр класса ClientDB):
     1. Если необходимо, удалить все идентификаторы сессий в БД (если нет — пропускаем шаг)
@@ -21,7 +23,7 @@ import sqlite3
     1. Получить имя пользователя с идентификатором сессии
         user_name = db.get_all_users_with_session_ids()[0]
     2. Получить идентификатор сессии (user_name — имя пользователя, полученное на предыдущем шаге)
-        session_id = db.get_session_ids(user_name)[0]
+        session_id = db.get_session_id(user_name)
     3. Радоваться и юзать.
 """
 
@@ -36,7 +38,12 @@ class ClientDB:
         Инициализация класса доступа к БД
         :param db_name: имя БД
         """
-        self.conn = sqlite3.connect(db_name)
+        self.db_name = db_name
+        self.conn = None
+        self.cursor = None
+
+    def connect(self):
+        self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor()
 
     @classmethod
@@ -65,7 +72,8 @@ class ClientDB:
         # Создание таблицы «ПОЛЬЗОВАТЕЛИ»
         cursor.execute("""CREATE TABLE IF NOT EXISTS users
                           (user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                          user_name TEXT)
+                          user_name TEXT,
+                          session_id INTEGER DEFAULT 0)
                           """)
 
         # Создание таблицы «КОММЕНТАРИИ»
@@ -103,13 +111,7 @@ class ClientDB:
                           status_name TEXT)
                           """)
 
-        # Создание таблицы «ИДЕНТИФИКАТОРЫ СЕССИЙ»
-        cursor.execute("""CREATE TABLE IF NOT EXISTS sessions
-                              (session_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                              user_id INTEGER,
-                              session_identificator TEXT,
-                              FOREIGN KEY (user_id) REFERENCES users(user_id))
-                              """)
+        conn.close()
 
         return cls(db_name)
 
@@ -371,7 +373,7 @@ class ClientDB:
         :return: None
         """
         user_id = self.add_user(user_name)
-        self.cursor.execute("""INSERT INTO sessions (user_id, session_identificator) VALUES (?, ?)""", [user_id, session_id])
+        self.cursor.execute("""UPDATE users SET session_id = ? WHERE user_id = ?""", [session_id, user_id])
         self.conn.commit()
 
     def get_all_users_with_session_ids(self):
@@ -379,17 +381,17 @@ class ClientDB:
         Получить всех пользователей с идентификаторами сессий
         :return: список имен пользователей
         """
-        self.cursor.execute("""SELECT users.user_name FROM users INNER JOIN sessions ON users.user_id = sessions.user_id GROUP BY users.user_name""")
+        self.cursor.execute("""SELECT user_name FROM users WHERE session_id != 0""")
         return [x[0] for x in self.cursor.fetchall()]
 
-    def get_session_ids(self, user_name):
+    def get_session_id(self, user_name):
         """
-        Получить идентификаторы сессий пользователя
+        Получить идентификатор сессий пользователя
         :param user_name: имя пользователя
-        :return: список идентификаторов сессий пользователя
+        :return: идентификатор сессии пользователя
         """
-        self.cursor.execute("""SELECT sessions.session_identificator FROM sessions INNER JOIN users ON sessions.user_id = users.user_id WHERE users.user_name = ?""", [user_name])
-        session_ids = list(map(lambda x: x[0], self.cursor.fetchall()))
+        self.cursor.execute("""SELECT session_id FROM users WHERE user_name = ?""", [user_name])
+        session_ids = self.cursor.fetchone()[0]
         return session_ids
 
     def del_all_session_ids(self):
@@ -397,7 +399,7 @@ class ClientDB:
         Удалить все идентификаторы сессий
         :return: None
         """
-        self.cursor.execute("""DELETE FROM sessions""")
+        self.cursor.execute("""UPDATE users SET session_id = 0 WHERE session_id != 0""")
         self.conn.commit()
 
     #########################
@@ -405,7 +407,8 @@ class ClientDB:
     #########################
 
     def close(self):
-        """        Закрыть соединение с БД
+        """
+        Закрыть соединение с БД
         :return: None
         """
         self.conn.close()

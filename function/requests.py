@@ -10,7 +10,7 @@ db = ClientDB('client_db_1')
 user_name = 'Jack'  # как будем получать имя текущего (залогиненного) пользователя?
 
 try:
-    session_id = db.get_session_ids(user_name)[0]  # получаем из бд, если авторизация (регистрация?) ок
+    session_id = db.get_session_id(user_name)  # получаем из бд, если авторизация (регистрация?) ок
 except:
     session_id = 0
 session = JIMRequest(session_id=session_id)

@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_NAME = 'Client_db'
 
 db = ClientDB.create_db(os.path.join(BASE_DIR, DB_NAME))
-
+db.connect()
 
 class Monitor(QtCore.QObject):
     gotCheck = QtCore.pyqtSignal(dict)
@@ -63,6 +63,7 @@ if __name__ == '__main__':
     DB_NAME = 'Client_db'
 
     db = ClientDB.create_db(os.path.join(BASE_DIR, DB_NAME))
+    db.connect()
 
     cl = Client('127.0.0.1', 8000)
     cl.username = 'Bob20'

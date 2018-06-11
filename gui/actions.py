@@ -2,6 +2,7 @@
 from db.client_db import ClientDB
 
 client_db = ClientDB.create_db('client_db_1')
+client_db.connect()
 print('db created!')
 
 def authorization(body):
