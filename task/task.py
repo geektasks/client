@@ -20,8 +20,8 @@ class Task:
         self._time = time.time()  # время создания
         self._deadline_time = None  # срок исполнения
         self._status = 0
-        self._performer_user = [creator]  # список пользователей, которым задача сопоставленна
-        self._access_users = [creator]  # список пользователе у которых есть доступ к задаче
+        self._performers = [creator]  # список пользователей, которым задача сопоставленна
+        self._watchers = [creator]  # список пользователе у которых есть доступ к задаче
         self.comments = dict()  # {'User_1': [{'text': text, 'time': time}, {}...], ...}
 
     def __repr__(self):
@@ -37,6 +37,18 @@ comments: {comments}\n>>>>>'.format(name=self._name,
                                     performers=self._performer_user,
                                     access=self._access_users,
                                     comments=self.comments)
+
+    @property
+    def task_dict(self):
+        t_dict = dict()
+        for key in self.__dict__:
+            try:
+                value = getattr(self, key)
+                # if value:
+                t_dict.update({key.lstrip('_'): value})
+            except AttributeError:
+                pass
+        return t_dict
 
     @property
     def creator(self):
@@ -92,7 +104,7 @@ comments: {comments}\n>>>>>'.format(name=self._name,
         :param value: статус задачи: 0 - в очереди, 1 - выполняется, 2 - сделана
         :return:
         '''
-        if self.viewer in self._performer_user or self.viewer in self._access_users:
+        if self.viewer in self._performers or self.viewer in self._watchers:
             self._status = value
         else:
             print('You have not access to edit status')
@@ -103,15 +115,15 @@ comments: {comments}\n>>>>>'.format(name=self._name,
 
     @deadline_time.setter
     def deadline_time(self, value):
-        if self.viewer in self._performer_user or self.viewer in self._access_users:
+        if self.viewer in self._performers or self.viewer in self._watchers:
             self._deadline_time = value
         else:
             print('You have not access to edit deadline')
 
     @property
     def performer_user(self):
-        if self.viewer in self._performer_user or self.viewer in self._access_users:
-            return self._performer_user
+        if self.viewer in self._performers or self.viewer in self._watchers:
+            return self._performers
         else:
             print('You have not access to edit performers')
             return False
@@ -123,7 +135,7 @@ comments: {comments}\n>>>>>'.format(name=self._name,
         :return:
         '''
         if self.performer_user:
-            if user not in self._performer_user:
+            if user not in self._performers:
                 self.performer_user.append(user)
 
     def del_performer(self, user):
@@ -144,23 +156,23 @@ comments: {comments}\n>>>>>'.format(name=self._name,
 
     @property
     def access_users(self):
-        if self.viewer in self._access_users:
-            return self._access_users
+        if self.viewer in self._watchers:
+            return self._watchers
         else:
             print('You have not access to edit access list')
             return False
 
     def add_to_access(self, user):
         if self.access_users:
-            if user not in self._access_users:
-                self._access_users.append(user)
+            if user not in self._watchers:
+                self._watchers.append(user)
 
     def del_from_access(self, user):
         if self.access_users:
             if user == self.creator:
                 print('<Creator could not be removed>')
             else:
-                self._access_users.remove(user)
+                self._watchers.remove(user)
 
     def add_comment(self, comment):
         '''
@@ -171,7 +183,7 @@ comments: {comments}\n>>>>>'.format(name=self._name,
         user = comment.user if isinstance(comment, Comment) else comment['user']
         text = comment.text if isinstance(comment, Comment) else comment['text']
         time_ = comment.time if isinstance(comment, Comment) else comment['time']
-        if user in self._performer_user or user in self._access_users:
+        if user in self._performers or user in self._watchers:
             if user in self.comments:
                 self.comments[user].append({'time': time_, 'text': text})
             else:
@@ -192,5 +204,6 @@ comments: {comments}\n>>>>>'.format(name=self._name,
 
 
 if __name__ == '__main__':
-    pass
+    task = Task(creator='gkjf')
+    print(task.task_dict)
 
