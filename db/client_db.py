@@ -27,6 +27,9 @@ import sqlite3
     3. Радоваться и юзать.
 """
 
+class ClientDataBaseError(Exception):
+    pass
+
 class ClientDB:
 
     ###############################
@@ -43,6 +46,10 @@ class ClientDB:
         self.cursor = None
 
     def connect(self):
+        """
+        Подключиться к базе
+        :return: None
+        """
         self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor()
 
@@ -61,6 +68,7 @@ class ClientDB:
         # Создание таблицы «ЗАДАЧИ»
         cursor.execute("""CREATE TABLE IF NOT EXISTS tasks
                           (task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          server_task_id INTEGER,
                           task_name TEXT,
                           task_description TEXT,
                           status_id INTEGER,
@@ -79,6 +87,7 @@ class ClientDB:
         # Создание таблицы «КОММЕНТАРИИ»
         cursor.execute("""CREATE TABLE IF NOT EXISTS comments
                           (comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          server_comment_id INTEGER,
                           task_id INTEGER,
                           comment_text TEXT,
                           comment_time INTEGER,
@@ -123,7 +132,7 @@ class ClientDB:
         """
         Добавить пользователя в БД
         :param user_name: имя пользователя
-        :return: user_id идентификатор пользователя в локальной БД
+        :return: локальный идентификатор пользователя
         """
         self.cursor.execute("""SELECT * FROM users WHERE users.user_name = ?""", [user_name])
         try:
@@ -138,7 +147,7 @@ class ClientDB:
         """
         Добавить статус в БД
         :param status_name: имя статуса
-        :return: status_id идентификатор статуса в локальной БД
+        :return: status_id локальный идентификатор статуса
         """
         self.cursor.execute("""SELECT * FROM statuses WHERE statuses.status_name = ?""", [status_name])
         try:
@@ -149,10 +158,11 @@ class ClientDB:
             self.conn.commit()
             return self.cursor.lastrowid
 
+    # Нужна ли проверка на существование задачи?
     def add_watcher(self, task_id, user_name):
         """
         Добавить наблюдателя (пользователя, имеющего доступ к задаче) в БД
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :param user_name: имя пользователя
         :return: watcher_id идентификатор наблюдателя в локальной БД
         """
@@ -166,10 +176,11 @@ class ClientDB:
             self.conn.commit()
             return self.cursor.lastrowid
 
+    # Нужна ли проверка на существование задачи?
     def add_performer(self, task_id, user_name):
         """
         Добавить исполнителя (пользователя, сопоставленного задаче) в БД
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :param user_name: имя пользователя
         :return: performer_id идентификатор исполнителя в локальной БД
         """
@@ -185,49 +196,136 @@ class ClientDB:
 
     def add_task(self, task):
         """
-        Добавить задачу в БД
+        Добавить задачу в БД. Значение поля «id» будет использовано в качестве идентификатора задачи сервера
         :param task: экземпляр класса «Задача»
-        :return: task_id идентификатор задачи в локальной БД
+        :return: локальный идентификатор задачи
         """
         user_id = self.add_user(task["creator"])
         status_id = self.add_status(task["status"])
+        server_task_id = None
+        if "id" in task:
+            server_task_id = task["id"]
         values = [
+            server_task_id,
             task["name"],
             task["description"],
             status_id,
             user_id
         ]
-        self.cursor.execute("""INSERT INTO tasks (task_name, task_description, status_id, user_id) VALUES (?, ?, ?, ?)""", values)
+        self.cursor.execute("""INSERT INTO tasks (server_task_id, task_name, task_description, status_id, user_id) VALUES (?, ?, ?, ?, ?)""", values)
         task_id = self.cursor.lastrowid
-        for watcher in task["watchers"]:
-            self.add_watcher(task_id, watcher)
-        for performer in task["performers"]:
-            self.add_performer(task_id, performer)
-        for comment in task["comments"]:
-            self.add_comment(comment, task_id=task_id)
+        if "watchers" in task:
+            for watcher in task["watchers"]:
+                self.add_watcher(task_id, watcher)
+        if "performers" in task:
+            for performer in task["performers"]:
+                self.add_performer(task_id, performer)
+        if "comments" in task:
+            for comment in task["comments"]:
+                self.add_comment(comment, task_id=task_id)
         self.conn.commit()
         return task_id
 
+    # Нужна ли проверка на существование задачи?
+    def set_task_id(self, local_id, server_id):
+        """
+        Назначить идентификатор сервера задаче
+        :param local_id: локальный идентификатор
+        :param server_id: идентификатор сервера
+        :return: None
+        """
+        self.cursor.execute("""UPDATE tasks SET server_task_id = ? WHERE task_id = ?""", [server_id, local_id])
+        self.conn.commit()
+
+    # Нужна ли проверка на существование задачи?
     def add_comment(self, comment, task_id=None):
         """
-        Добавить комментарий в БД
-        :param comment: экземпляр класса «Комментарий»
-        :param task_id: если поле «task_id» переданного экземпляра класса «Комментарий» содержит значение None, то в
-        качестве поля «task_id» при сохранении в БД будет использовано это значение
-        :return: comment_id идентификатор комментария в локальной БД
+        Добавить комментарий в БД. Значение поля «id» будет использовано в качестве идентификатора комментария сервера.
+        Значение поля «task_id» будет использовано в качестве идентификатора задачи сервера
+        :param comment: экземпляр класса «Комментарий» ()
+        :param task_id: локальный идентификатор задачи, если поле «task_id» переданного экземпляра класса «Комментарий»
+        содержит значение None, то при сохранении в БД будет использовано это значение
+        :return: локальный идентификатор комментария
         """
         user_id = self.add_user(comment["user"])
-        if comment["task id"] is not None:
-            task_id = comment["task id"]
+        if "task id" in comment:
+            local_task_id = self.get_local_task_id(comment["task id"]) or task_id
+        else:
+            local_task_id = task_id
+        if local_task_id is None:
+            raise ClientDataBaseError
+        server_comment_id = None
+        if "id" in comment:
+            server_comment_id = task["id"]
         values = [
-            task_id,
+            server_comment_id,
+            local_task_id,
             comment["text"],
             comment["time"],
             user_id
         ]
-        self.cursor.execute("""INSERT INTO comments (task_id, comment_text, comment_time, user_id) VALUES (?, ?, ?, ?)""", values)
+        self.cursor.execute("""INSERT INTO comments (server_comment_id, task_id, comment_text, comment_time, user_id) VALUES (?, ?, ?, ?, ?)""", values)
         self.conn.commit()
         return self.cursor.lastrowid
+
+    # Нужна ли проверка на существование комментария?
+    def set_comment_id(self, local_id, server_id):
+        """
+        Назначить идентификатор сервера комментарию
+        :param local_id: локальный идентификатор
+        :param server_id: идентификатор сервера
+        :return: None
+        """
+        self.cursor.execute("""UPDATE comments SET server_comment_id = ? WHERE comment_id = ?""", [server_id, local_id])
+        self.conn.commit()
+
+    def get_server_task_id(self, local_id):
+        """
+        Получить серверный идентификатор задачи по локальному идентификатору
+        :param local_id: локальный идентификатор
+        :return: идентификатор сервера, если такая задача существует, иначе None
+        """
+        self.cursor.execute("""SELECT server_task_id FROM tasks WHERE task_id = ?""", [local_id])
+        try:
+            return self.cursor.fetchone()[0]
+        except TypeError:
+            return None
+
+    def get_local_task_id(self, server_id):
+        """
+        Получить локальный идентификатор задачи по идентификатору сервера
+        :param server_id: идентификатор сервера
+        :return: локальный идентификатор, если такая задача существует, иначе None
+        """
+        self.cursor.execute("""SELECT task_id FROM tasks WHERE server_task_id = ?""", [server_id])
+        try:
+            return self.cursor.fetchone()[0]
+        except TypeError:
+            return None
+
+    def get_server_comment_id(self, local_id):
+        """
+        Получить серверный идентификатор комментария по локальному идентификатору
+        :param local_id: локальный идентификатор
+        :return: идентификатор сервера, если такой комментарий существует, иначе None
+        """
+        self.cursor.execute("""SELECT server_comment_id FROM comments WHERE comment_id = ?""", [local_id])
+        try:
+            return self.cursor.fetchone()[0]
+        except TypeError:
+            return None
+
+    def get_local_comment_id(self, server_id):
+        """
+        Получить локальный идентификатор комментария по идентификатору сервера
+        :param server_id: идентификатор сервера
+        :return: локальный идентификатор, если такой комментарий существует, иначе None
+        """
+        self.cursor.execute("""SELECT comment_id FROM comments WHERE server_comment_id = ?""", [server_id])
+        try:
+            return self.cursor.fetchone()[0]
+        except TypeError:
+            return None
 
     #######################################
     # Извлечение строк из основных таблиц #
@@ -236,7 +334,7 @@ class ClientDB:
     def get_watchers(self, task_id):
         """
         Получить наблюдателей (пользователей, имеющих доступ к задаче)
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :return: список имен пользователей
         """
         self.cursor.execute("""SELECT users.user_name FROM users INNER JOIN watchers ON users.user_id = watchers.user_id WHERE watchers.task_id = ?""", [task_id])
@@ -245,7 +343,7 @@ class ClientDB:
     def get_performers(self, task_id):
         """
         Получить исполнителей (пользователя, сопоставленных задаче)
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :return: список имен пользователей
         """
         self.cursor.execute("""SELECT users.user_name FROM users INNER JOIN performers ON users.user_id = performers.user_id WHERE performers.task_id = ?""", [task_id])
@@ -254,7 +352,7 @@ class ClientDB:
     def get_comments(self, task_id):
         """
         Получить комментарии
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :return: список экземпляров класса «Комментарий»
         """
         self.cursor.execute("""SELECT comments.comment_id, comments.comment_text, comments.comment_time, users.user_name FROM comments INNER JOIN users ON comments.user_id = users.user_id WHERE comments.task_id = ?""", [task_id])
@@ -274,7 +372,7 @@ class ClientDB:
     def get_tasks(self):
         """
         Получить задачи из БД
-        :return: Список экземпляров класса «Задача»
+        :return: Список экземпляров класса «Задача» (поле «id» содержит локальный идентификатор задачи)
         """
         tasks = []
         self.cursor.execute("""SELECT tasks.task_id FROM tasks""")
@@ -284,17 +382,23 @@ class ClientDB:
         return tasks
 
     def get_task_id_by_name(self, task_name):
+        """
+        Получить идентификатор задачи по ее имени
+        :param task_name: имя задачи
+        :return: локальный идентификатор первой задачи с таким именем
+        """
         self.cursor.execute("""SELECT task_id FROM tasks WHERE task_name = ?""", [task_name])
-        task_id = self.cursor.fetchone()
-        return task_id
+        try:
+            return self.cursor.fetchone()[0]
+        except:
+            return None
 
-
-
+    # Нужна ли проверка на существование задачи?
     def get_task(self, task_id):
         """
         Получить задачу из БД
-        :param task_id: идентификатор задачи
-        :return: экземпляр класса «Задача»
+        :param task_id: локальный идентификатор задачи
+        :return: экземпляр класса «Задача» (поле «id» содержит локальный идентификатор задачи)
         """
         self.cursor.execute("""SELECT tasks.task_name, tasks.task_description, statuses.status_name, users.user_name FROM tasks INNER JOIN statuses ON tasks.status_id = statuses.status_id INNER JOIN users ON tasks.user_id = users.user_id WHERE tasks.task_id = ?""", [task_id])
         data = self.cursor.fetchone()
@@ -310,63 +414,58 @@ class ClientDB:
         }
         return task
 
+    # Нужна ли проверка на существование задачи?
     def change_task_name(self, task_id, task_name):
         """
         Изменить имя задачи
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :param task_name: новое имя
-        :return: экземпляр класса «Задача»
+        :return: None
         """
         self.cursor.execute("""UPDATE tasks SET task_name = ? WHERE task_id = ?""", [task_name, task_id])
         self.conn.commit()
-        return self.get_task(task_id)
 
+    # Нужна ли проверка на существование задачи?
     def change_task_description(self, task_id, task_description):
         """
         Изменить описание задачи
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :param task_description: новое описание
-        :return: экземпляр класса «Задача»
+        :return: None
         """
         self.cursor.execute("""UPDATE tasks SET task_description = ? WHERE task_id = ?""", [task_description, task_id])
         self.conn.commit()
-        return self.get_task(task_id)
 
     def remove_watcher(self, task_id, user_name):
         """
         Удалить наблюдателя (пользователя, имеющего доступ к задаче) — закрыть доступ
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :param user_name: имя наболюдателя
-        :return: экземпляр класса «Задача»
+        :return: None
         """
         user_id = self.add_user(user_name)
         self.cursor.execute("""DELETE FROM watchers WHERE task_id = ? AND user_id = ?""", [task_id, user_id])
         self.conn.commit()
-        return self.get_task(task_id)
 
     def remove_performer(self, task_id, user_name):
         """
         Удалить исполнителя (пользователя, сопоставленного задаче)
-        :param task_id: идентификатор задачи
+        :param task_id: локальный идентификатор задачи
         :param user_name: имя исполнителя
-        :return: экземпляр класса «Задача»
+        :return: None
         """
         user_id = self.add_user(user_name)
         self.cursor.execute("""DELETE FROM performers WHERE task_id = ? AND user_id = ?""", [task_id, user_id])
         self.conn.commit()
-        return self.get_task(task_id)
 
     def remove_comment(self, comment_id):
         """
         Удалить комментарий
-        :param comment_id: идентификатор комментария
-        :return: экземпляр класса «Задача»
+        :param comment_id: локальный идентификатор комментария
+        :return: None
         """
-        self.cursor.execute("SELECT task_id FROM comments WHERE comments.comment_id = ?", [comment_id])
-        task_id = self.cursor.fetchone()[0]
         self.cursor.execute("""DELETE FROM comments WHERE comment_id = ?""", [comment_id])
         self.conn.commit()
-        return self.get_task(task_id)
 
     ####################################
     # Работа с идентификаторами сессий #
@@ -395,11 +494,13 @@ class ClientDB:
         """
         Получить идентификатор сессий пользователя
         :param user_name: имя пользователя
-        :return: идентификатор сессии пользователя
+        :return: идентификатор сессии пользователя, если есть, иначе None
         """
         self.cursor.execute("""SELECT session_id FROM users WHERE user_name = ?""", [user_name])
-        session_ids = self.cursor.fetchone()[0]
-        return session_ids
+        try:
+            return self.cursor.fetchone()[0]
+        except TypeError:
+            return None
 
     def del_all_session_ids(self):
         """
