@@ -60,13 +60,22 @@ class ClientDB:
 
         # Создание таблицы «ЗАДАЧИ»
         cursor.execute("""CREATE TABLE IF NOT EXISTS tasks
-                          (task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          (task_id INTEGER PRIMARY KEY,
                           task_name TEXT,
                           task_description TEXT,
                           status_id INTEGER,
                           user_id INTEGER,
+                          create_id INTEGER,
                           FOREIGN KEY (status_id) REFERENCES statuses(id),
                           FOREIGN KEY (user_id) REFERENCES users(id))
+                          """)
+
+        # Создание таблицы «НЕЗАРЕГИСТРИРОВАННЫЕ ЗАДАЧИ»
+        cursor.execute("""CREATE TABLE IF NOT EXISTS unregistered_tasks
+                          (unregistered_task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          unregistered_task_name TEXT,
+                          unregistered_task_description TEXT,
+                          status_id INTEGER)
                           """)
 
         # Создание таблицы «ПОЛЬЗОВАТЕЛИ»
@@ -78,14 +87,25 @@ class ClientDB:
 
         # Создание таблицы «КОММЕНТАРИИ»
         cursor.execute("""CREATE TABLE IF NOT EXISTS comments
-                          (comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          (comment_id INTEGER PRIMARY KEY,
                           task_id INTEGER,
                           comment_text TEXT,
                           comment_time INTEGER,
                           user_id INTEGER,
-                          FOREIGN KEY (task_id) REFERENCES tasks(task_id)
+                          create_id INTEGER,
+                          FOREIGN KEY (task_id) REFERENCES tasks(task_id),
                           FOREIGN KEY (user_id) REFERENCES users(user_id))
                           """)
+
+        # Создание таблицы «НЕЗАРЕГИСТРИРОВАННЫЕ КОММЕНТАРИИ»
+        cursor.execute("""CREATE TABLE IF NOT EXISTS unregistered_comments
+                          (unregistered_comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          task_id INTEGER,
+                          unregistered_comment_text TEXT,
+                          unregistered_comment_time INTEGER,
+                          FOREIGN KEY (task_id) REFERENCES tasks(task_id))
+                          """)
+
 
         # Создание таблицы «ПОЛЬЗОВАТЕЛИ С ДОСТУПОМ»
         cursor.execute("""CREATE TABLE IF NOT EXISTS watchers
@@ -187,26 +207,68 @@ class ClientDB:
         """
         Добавить задачу в БД
         :param task: экземпляр класса «Задача»
-        :return: task_id идентификатор задачи в локальной БД
+        :return: False, если задача с таким идентификатором уже существует
+                 True, если добавление прошло успешно
         """
+        self.cursor.execute("""SELECT * FROM tasks WHERE task_id = ?""", [task["id"]])
+        if self.cursor.fetchone():
+            return False
         user_id = self.add_user(task["creator"])
         status_id = self.add_status(task["status"])
         values = [
+            task["id"],
             task["name"],
             task["description"],
             status_id,
             user_id
         ]
-        self.cursor.execute("""INSERT INTO tasks (task_name, task_description, status_id, user_id) VALUES (?, ?, ?, ?)""", values)
-        task_id = self.cursor.lastrowid
+        self.cursor.execute("""INSERT INTO tasks (task_id, task_name, task_description, status_id, user_id) VALUES (?, ?, ?, ?, ?)""", values)
         for watcher in task["watchers"]:
-            self.add_watcher(task_id, watcher)
+            self.add_watcher(task["id"], watcher)
         for performer in task["performers"]:
-            self.add_performer(task_id, performer)
+            self.add_performer(task["id"], performer)
         for comment in task["comments"]:
-            self.add_comment(comment, task_id=task_id)
+            self.add_comment(comment, task_id=task["id"])
         self.conn.commit()
-        return task_id
+        return True
+
+    def add_unregistered_task(self, unregistered_task):
+        """
+        Добавить незарегитрированную на сервере задачу
+        :param unregistered_task: экземпляр класса «Задача»
+        :return: внутренний идентификатор задачи
+        """
+        status_id = self.add_status(unregistered_task["status"])
+        values = [
+            unregistered_task["name"],
+            unregistered_task["description"],
+            status_id
+        ]
+        self.cursor.execute("""INSERT INTO unregistered_tasks (unregistered_task_name, unregistered_task_description, status_id) VALUES (?, ?, ?)""", values)
+        self.conn.commit()
+        return self.cursor.lastrowid
+
+    def register_task(self, unregistered_task_id, task_id, user_name):
+        """
+        Зарегистрировать задачу
+        :param unregistered_task_id: внутренний идентификатор незарегистрированной заадачи
+        :param task_id: идентификатор задачи на сервере
+        :return: None, если нет незарегистрированной задачи с таким идентификатором
+                 False, если уже существует зарегистрированная задача с таким идентификатором
+                 True, если регистрация прошла успешно
+        """
+        self.cursor.execute("""SELECT * FROM unregistered_tasks WHERE unregistered_task_id = ?""", [unregistered_task_id])
+        unregistered_task = self.cursor.fetchone()
+        if not unregistered_task:
+            return None
+        self.cursor.execute("""SELECT * FROM tasks WHERE task_id = ?""", [task_id])
+        if self.cursor.fetchone():
+            return False
+        user_id = self.add_user(user_name)
+        self.cursor.execute("""INSERT INTO tasks (create_id, task_name, task_description, status_id, user_id, task_id) VALUES (?, ?, ?, ?, ?, ?)""", [*unregistered_task, user_id, task_id])
+        self.cursor.execute("""DELETE FROM unregistered_tasks WHERE unregistered_task_id = ?""", [unregistered_task_id])
+        self.conn.commit()
+        return True
 
     def add_comment(self, comment, task_id=None):
         """
@@ -214,20 +276,67 @@ class ClientDB:
         :param comment: экземпляр класса «Комментарий»
         :param task_id: если поле «task_id» переданного экземпляра класса «Комментарий» содержит значение None, то в
         качестве поля «task_id» при сохранении в БД будет использовано это значение
-        :return: comment_id идентификатор комментария в локальной БД
+        :return: False, если комментарий с таким идентификатором уже существует
+                 True, если добавление прошло успешно
         """
+        self.cursor.execute("""SELECT * FROM comments WHERE comment_id = ?""", [comment["id"]])
+        if self.cursor.fetchone():
+            return False
         user_id = self.add_user(comment["user"])
-        if comment["task id"] is not None:
+        if "task id" in comment and comment["task id"]:
             task_id = comment["task id"]
         values = [
+            comment["id"],
             task_id,
             comment["text"],
             comment["time"],
             user_id
         ]
-        self.cursor.execute("""INSERT INTO comments (task_id, comment_text, comment_time, user_id) VALUES (?, ?, ?, ?)""", values)
+        self.cursor.execute("""INSERT INTO comments (comment_id, task_id, comment_text, comment_time, user_id) VALUES (?, ?, ?, ?, ?)""", values)
+        self.conn.commit()
+        return True
+
+    def add_unregistered_comment(self, comment, task_id):
+        """
+        Добавить незарегитрированный на сервере комментарий
+        :param comment: экземпляр класса «Комментарий»
+        :param task_id: идентификатор задачи
+        :return: False, если задачи с указаныи идентификатором не существует
+                 внутренний идентификатор комментария, если задача существует
+        """
+        self.cursor.execute("""SELECT * FROM tasks WHERE task_id = ?""", [task_id])
+        if not self.cursor.fetchone():
+            return False
+        values = [
+            task_id,
+            comment["text"],
+            comment["time"],
+        ]
+        self.cursor.execute("""INSERT INTO unregistered_comments (task_id, unregistered_comment_text, unregistered_comment_time) VALUES (?, ?, ?)""", values)
         self.conn.commit()
         return self.cursor.lastrowid
+
+    def register_comment(self, unregistered_comment_id, comment_id, user_name):
+        """
+        Зарегистрировать комментарий
+        :param unregistered_comment_id: внутренний идентификатор незарегистрированного комментария
+        :param comment_id: идентификатор комментария на сервере
+        :return: None, если нет незарегистрированного комментария с таким идентификатором
+                 False, если уже существует зарегистрированный комментарий с таким идентификатором
+                 True, если регистрация прошла успешно
+        """
+        self.cursor.execute("""SELECT * FROM unregistered_comments WHERE unregistered_comment_id = ?""", [unregistered_comment_id])
+        unregistered_comment = self.cursor.fetchone()
+        if not unregistered_comment:
+            return None
+        self.cursor.execute("""SELECT * FROM comments WHERE comment_id = ?""", [comment_id])
+        if self.cursor.fetchone():
+            return False
+        user_id = self.add_user(user_name)
+        self.cursor.execute("""INSERT INTO comments (create_id, task_id, comment_text, comment_time, user_id, comment_id) VALUES (?, ?, ?, ?, ?, ?)""", [*unregistered_comment, user_id, comment_id])
+        self.cursor.execute("""DELETE FROM unregistered_comments WHERE unregistered_comment_id = ?""", [unregistered_comment_id])
+        self.conn.commit()
+        return True
 
     #######################################
     # Извлечение строк из основных таблиц #
@@ -274,7 +383,7 @@ class ClientDB:
     def get_tasks(self):
         """
         Получить задачи из БД
-        :return: Список экземпляров класса «Задача»
+        :return: список экземпляров класса «Задача»
         """
         tasks = []
         self.cursor.execute("""SELECT tasks.task_id FROM tasks""")
@@ -284,11 +393,14 @@ class ClientDB:
         return tasks
 
     def get_task_id_by_name(self, task_name):
+        """
+        Получить идентификатор задачи по ее имени
+        :param task_name: имя задачи
+        :return: идентификатор первой задачи с таким именем
+        """
         self.cursor.execute("""SELECT task_id FROM tasks WHERE task_name = ?""", [task_name])
         task_id = self.cursor.fetchone()
         return task_id
-
-
 
     def get_task(self, task_id):
         """
@@ -298,6 +410,8 @@ class ClientDB:
         """
         self.cursor.execute("""SELECT tasks.task_name, tasks.task_description, statuses.status_name, users.user_name FROM tasks INNER JOIN statuses ON tasks.status_id = statuses.status_id INNER JOIN users ON tasks.user_id = users.user_id WHERE tasks.task_id = ?""", [task_id])
         data = self.cursor.fetchone()
+        if not data:
+            return False
         task = {
             "id": task_id,
             "name": data[0],
