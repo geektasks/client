@@ -76,7 +76,7 @@ class FatThing(asyncio.Protocol):
         """
         try:
             self.QUEUE_HANDLERS[message["head"]["type"]][message["head"]["name"]](message)
-        except TypeError:
+        except (TypeError, KeyError):
             try:
                 load_message = json.loads(message)
                 self.QUEUE_HANDLERS[load_message["head"]["type"]][load_message["head"]["name"]](load_message)
