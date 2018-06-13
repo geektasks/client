@@ -1,5 +1,5 @@
-# не используем, все запросы делаются в requests
-
+#файл полностью не используем, все запросы делаются в requests
+'''
 from client.client import send_queue
 from jim.jimrequest import JIMRequest
 import hashlib
@@ -18,3 +18,4 @@ def autorization(name, password):
     password = pas.hexdigest()
     message = session.authorization(name=name, password=password).jim_dict
     queue.put(message)
+'''
