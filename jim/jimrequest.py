@@ -79,7 +79,7 @@ class JIMRequest:
         if name and description:
             return JIMRequest(session_id=self.session_id, id=task_id, name=name, description=description)
 
-    def get_all_task(self):
+    def get_all_tasks(self):
         return JIMRequest(session_id= self.session_id)
 
     def grant_access(self, task_id, user):
