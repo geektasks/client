@@ -30,32 +30,17 @@ class MyWindow(QtWidgets.QMainWindow):
 
         self.handler = handler
         self.start_handler()
-        self.start_thread()
+        self.start_monitor()
 
         self.ui.action_login.triggered.connect(self.sign_in)
 
-        self.gotCheck.connect(self.update_console)
         self.gotConsole.connect(self.update_console)
         self.gotError.connect(self.update_error)
 
-    def start_thread(self):
-        t1 = threading.Thread(target= self.control)
+    def start_monitor(self):
+        t1 = threading.Thread(target= self.monitor)
         t1.daemon = True
         t1.start()
-        # connect = self.client.run()
-        # if connect:
-        #     QtWidgets.QMessageBox.warning(self, 'Warning!', 'Not connect')
-        #     sys.exit()
-
-    # def start_monitor(self, dialog):
-    #     self.monitor.moveToThread(self.thread)
-    #     self.thread.started.connect(self.monitor.recv_msg)
-    #     self.thread.start()
-    #     # connect = self.monitor.client.socket._closed
-    #     connect = self.monitor.client.run()
-    #     if connect:
-    #         QtWidgets.QMessageBox.warning(dialog, 'Warning!', 'Not connect')
-    #         sys.exit()
 
     def start_handler(self):
         self.handler.run()
@@ -88,7 +73,7 @@ class MyWindow(QtWidgets.QMainWindow):
     ####################################################################################################################
     ########функция обработки сообщений от сервера################################################################
     ####################################################################################################################
-    def control(self):
+    def monitor(self):
         while 1:
             data = self.output_queue.get()
             print(data)
@@ -181,7 +166,9 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
-        ################################################
+        ###############################################################################################################
+        ############## функции обработки сообщений от сервера, запускаются по сигналу от функции обработчика###########
+        ###############################################################################################################
 
     @QtCore.pyqtSlot(dict)
     def update_console(self, body):

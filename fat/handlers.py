@@ -124,6 +124,10 @@ def registration(message):
     put_message(message)
     release_queue()
 
+@handler.conditional_queue_handler("action", "check user")
+def check_user(message):
+    block_queue()
+    send_message(message)
 
 @handler.conditional_socket_handler('server response', 'check user')
 def check_user(message):
