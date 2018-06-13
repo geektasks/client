@@ -1,5 +1,5 @@
 # не используем, все запросы делаются в requests
-
+'''
 from client.client import send_queue
 from jim.jimrequest import JIMRequest
 import hashlib
@@ -22,3 +22,4 @@ def registration(name, password, email):
     password = pas.hexdigest()
     message = session.registration(name=name, password=password, email=email).jim_dict
     queue.put(message)
+'''
