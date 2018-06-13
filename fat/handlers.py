@@ -119,6 +119,18 @@ def registration(message):
     put_message(message)
     release_queue()
 
+@handler.conditional_socket_handler('server response', 'registration error')
+def registration(message):
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_socket_handler('server response', 'check user')
+def check_user(message):
+    print(message)
+    put_message(message)
+    release_queue()
+
 
 @handler.conditional_queue_handler("action", "authorization")
 def authorization(message):

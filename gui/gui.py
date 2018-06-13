@@ -1,7 +1,7 @@
 import sys
-
+import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
-from gui.main_form import Ui_MainWindow as ui_class
+from gui.templates.main_form import Ui_MainWindow as ui_class
 
 # from gui.monitor import Monitor
 from fat.handlers import handler
@@ -10,6 +10,9 @@ import function.requests as request
 
 
 class MyWindow(QtWidgets.QMainWindow):
+    gotCheck = QtCore.pyqtSignal(dict)
+    gotConsole = QtCore.pyqtSignal(dict)
+    gotError = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent = None):
 
@@ -18,17 +21,31 @@ class MyWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.ui.retranslateUi(self)
 
-        # self.monitor = Monitor(self)
-        # self.thread = QtCore.QThread()
-        # self.start_monitor(QtWidgets.QDialog())
-        #
-        # self.monitor.gotCheck.connect(self.update_console)
-        # self.monitor.gotError.connect(self.update_error)
+        self.NAME = {
+            'registration': self.gotConsole,
+            'registration error': self.gotError,
+            'authorization': '',
+            'check user': self.gotCheck}
+
 
         self.handler = handler
         self.start_handler()
+        self.start_thread()
 
-        self.sign_in()
+        self.ui.action_login.triggered.connect(self.sign_in)
+
+        self.gotCheck.connect(self.update_console)
+        self.gotConsole.connect(self.update_console)
+        self.gotError.connect(self.update_error)
+
+    def start_thread(self):
+        t1 = threading.Thread(target= self.control)
+        t1.daemon = True
+        t1.start()
+        # connect = self.client.run()
+        # if connect:
+        #     QtWidgets.QMessageBox.warning(self, 'Warning!', 'Not connect')
+        #     sys.exit()
 
     # def start_monitor(self, dialog):
     #     self.monitor.moveToThread(self.thread)
@@ -68,8 +85,29 @@ class MyWindow(QtWidgets.QMainWindow):
         else:
             dialog.accept()
 
+    ####################################################################################################################
+    ########функция обработки сообщений от сервера################################################################
+    ####################################################################################################################
+    def control(self):
+        while 1:
+            data = self.output_queue.get()
+            print(data)
+            body = data['body']
+            try:
+                if data['head']['name'] in self.NAME:
+                    print(data['head']['name'])
+                    controller = self.NAME.get(data['head']['name'])
+                    print('сообщение для вывода в гуи', data)
+                    controller.emit(body)
+                else:
+                    print(data['head']['name'])
+                    print('unknown_response')
+            except Exception as err:
+                print(err)
+    ####################################################################################################################
+
     def registration(self):
-        dialog_reg = uic.loadUi('gui/sign_up.ui')
+        dialog_reg = uic.loadUi('gui/templates/sign_up.ui')
         dialog_reg.login.setFocus()
         dialog_reg.flag = True
 
@@ -77,38 +115,35 @@ class MyWindow(QtWidgets.QMainWindow):
             name = dialog_reg.login.text()
             password = dialog_reg.password.text()
             email = dialog_reg.email.text()
-            self.monitor.client.username = name######## при регистрации запоминаем имя пользователя, при авторизации делать тоже самое
-                                                    ### если авторизация прошла, пишем в бд
             self.fields_checker(name, password, dialog_reg)
             if dialog_reg.flag:
-                # self.monitor.client.registration(name, password, email)
                 message = request.registration(name=name, password=password, email=email)
                 self.input_queue.put(message)
             else:
                 QtWidgets.QMessageBox.warning(dialog_reg, 'Warning!', 'Uncorrect name')
                 self.registration()
 
-        # def check_login(monitor):
-        #     text = dialog_reg.login.text()
-        #     message = request.check_user(text)
-        #     self.input_queue.put(message)
+        def check_login():
+            text = dialog_reg.login.text()
+            message = request.check_user(text)
+            self.input_queue.put(message)
 
-        # @QtCore.pyqtSlot(dict)
-        # def label_check_user(body):
-        #     if body['code'] == 200:
-        #         pixmap = QtGui.QPixmap('gui/icon/ok.png')
-        #         dialog_reg.label_4.resize(23, 23)
-        #         dialog_reg.label_4.setPixmap(pixmap)
-        #         dialog_reg.flag = True
-        #     else:
-        #         pixmap = QtGui.QPixmap('gui/icon/error.png')
-        #         dialog_reg.label_4.resize(23, 23)
-        #         dialog_reg.label_4.setPixmap(pixmap)
-        #         dialog_reg.flag = None
+        @QtCore.pyqtSlot(dict)
+        def label_check_user(body):
+            if body['code'] == 200:
+                pixmap = QtGui.QPixmap('gui/icon/ok.png')
+                dialog_reg.label_4.resize(23, 23)
+                dialog_reg.label_4.setPixmap(pixmap)
+                dialog_reg.flag = True
+            else:
+                pixmap = QtGui.QPixmap('gui/icon/error.png')
+                dialog_reg.label_4.resize(23, 23)
+                dialog_reg.label_4.setPixmap(pixmap)
+                dialog_reg.flag = None
 
 
-        # self.monitor.gotCheck.connect(label_check_user)
-        # dialog_reg.login.textChanged.connect(lambda: check_login(self.monitor))
+        self.gotCheck.connect(label_check_user)
+        dialog_reg.login.textChanged.connect(check_login)
         dialog_reg.ok.clicked.connect(reg)
         dialog_reg.cancel.clicked.connect(dialog_reg.close)
         dialog_reg.cancel.clicked.connect(self.sign_in)
@@ -116,7 +151,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def sign_in(self):
 
-        dialog = uic.loadUi('gui/sign_in.ui')
+        dialog = uic.loadUi('gui/templates/sign_in.ui')
         dialog.login.setFocus()
 
         def login():
@@ -133,7 +168,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.exec()
 
     def on_createTask_pressed(self):
-        dialog = uic.loadUi('gui/task_create.ui')
+        dialog = uic.loadUi('gui/templates/task_create.ui')
         dialog.topic.setFocus()
 
         def task_create():
