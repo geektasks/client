@@ -13,6 +13,8 @@ class MyWindow(QtWidgets.QMainWindow):
     gotCheck = QtCore.pyqtSignal(dict)
     gotConsole = QtCore.pyqtSignal(dict)
     gotErrorRegistration = QtCore.pyqtSignal(dict)
+    gotCreatedTask = QtCore.pyqtSignal(dict)
+    gotUpdateTaskList = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent = None):
 
@@ -25,7 +27,9 @@ class MyWindow(QtWidgets.QMainWindow):
             'registration': self.gotConsole,
             'registration error': self.gotErrorRegistration,
             'authorization': self.gotConsole,
-            'check user': self.gotCheck}
+            'check user': self.gotCheck,
+            'create task': self.gotCreatedTask,
+            'get all tasks': self.gotUpdateTaskList}
 
 
         self.handler = handler
@@ -36,6 +40,8 @@ class MyWindow(QtWidgets.QMainWindow):
 
         self.gotConsole.connect(self.update_console)
         self.gotErrorRegistration.connect(self.update_error)
+        self.gotCreatedTask.connect(self.created_task_response)
+        self.gotUpdateTaskList.connect(self.update_tasks_list)
 
     def start_monitor(self):
         t1 = threading.Thread(target= self.monitor)
@@ -169,7 +175,8 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def get_all_task(self):
         self.ui.taskList.clear()
-        message = request.get_all_task()
+        message = request.get_all_tasks()
+        print(message)
         self.input_queue.put(message)
 
         ###############################################################################################################
@@ -185,3 +192,15 @@ class MyWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.warning(QtWidgets.QDialog(), 'Warning!', body['message'])
         # sys.exit()
         self.registration()
+
+    @QtCore.pyqtSlot(dict)
+    def created_task_response(self, body):
+        if body['code'] == 201:
+            self.get_all_task()
+        else:
+            self.update_console(body)
+
+    @QtCore.pyqtSlot(dict)
+    def update_tasks_list(self, body):
+        for task in body['message']:
+            self.ui.taskList.addItem(str(task))
