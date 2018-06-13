@@ -214,3 +214,17 @@ def edit_task(message):
 
     put_message(message)
     release_queue()
+
+@handler.conditional_queue_handler('action', 'get all tasks')
+def get_all_tasks(message):
+    block_queue()
+    print(1)
+    send_message(message)
+    print(2)
+
+
+@handler.conditional_socket_handler("server response", "get all tasks")
+def get_all_tasks(message):
+    print(message)
+    put_message(message)
+    release_queue()
