@@ -60,6 +60,7 @@ class MyWindow(QtWidgets.QMainWindow):
                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                        QtWidgets.QMessageBox.No)
         if result == QtWidgets.QMessageBox.Yes:
+            dialog.handler.stop()
             e.accept()
             QtWidgets.QWidget.closeEvent(dialog, e)
         else:
