@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
-from gui.main_form import Ui_MainWindow as ui_class
+from gui.templates.main_form import Ui_MainWindow as ui_class
 
 # from gui.monitor import Monitor
 from fat.handlers import handler
@@ -116,7 +116,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def sign_in(self):
 
-        dialog = uic.loadUi('gui/sign_in.ui')
+        dialog = uic.loadUi('gui/templates/sign_in.ui')
         dialog.login.setFocus()
 
         def login():
