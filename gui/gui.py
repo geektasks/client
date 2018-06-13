@@ -12,7 +12,7 @@ import function.requests as request
 class MyWindow(QtWidgets.QMainWindow):
     gotCheck = QtCore.pyqtSignal(dict)
     gotConsole = QtCore.pyqtSignal(dict)
-    gotError = QtCore.pyqtSignal(dict)
+    gotErrorRegistration = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent = None):
 
@@ -23,8 +23,8 @@ class MyWindow(QtWidgets.QMainWindow):
 
         self.NAME = {
             'registration': self.gotConsole,
-            'registration error': self.gotError,
-            'authorization': '',
+            'registration error': self.gotErrorRegistration,
+            'authorization': self.gotConsole,
             'check user': self.gotCheck}
 
 
@@ -35,7 +35,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.ui.action_login.triggered.connect(self.sign_in)
 
         self.gotConsole.connect(self.update_console)
-        self.gotError.connect(self.update_error)
+        self.gotErrorRegistration.connect(self.update_error)
 
     def start_monitor(self):
         t1 = threading.Thread(target= self.monitor)
@@ -161,10 +161,16 @@ class MyWindow(QtWidgets.QMainWindow):
             description = dialog.description.toPlainText()
             message = request.create_task(name=topic, description=description)
             self.input_queue.put(message)
+            # self.get_all_task()
 
         dialog.addTask.clicked.connect(task_create)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
+
+    def get_all_task(self):
+        self.ui.taskList.clear()
+        message = request.get_all_task()
+        self.input_queue.put(message)
 
         ###############################################################################################################
         ############## функции обработки сообщений от сервера, запускаются по сигналу от функции обработчика###########
