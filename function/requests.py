@@ -59,12 +59,13 @@ def edit_task(task_id, name=None, description=None):
     message = session.edit_task(task_id=task_id, name=name, description=description).jim_dict
     return message
 
-def get_all_task():
+def get_all_tasks():
     try:
         session.session_id = handlers.handler.data['session_id']
     except Exception as err:
         print(err)
-    message = session.get_all_task()
+    message = session.get_all_tasks().jim_dict
+    print(message)
     return message
 
 
