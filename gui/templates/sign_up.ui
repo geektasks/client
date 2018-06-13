@@ -46,7 +46,11 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <widget class="QLineEdit" name="login"/>
+          <widget class="QLineEdit" name="login">
+           <property name="maxLength">
+            <number>25</number>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLineEdit" name="password">
