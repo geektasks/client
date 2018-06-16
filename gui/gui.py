@@ -38,6 +38,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.start_monitor()
 
         self.ui.action_login.triggered.connect(self.sign_in)
+        self.ui.taskList.doubleClicked.connect(self.task)
 
         self.gotConsole.connect(self.update_console)
         self.gotErrorRegistration.connect(self.update_error)
@@ -179,9 +180,20 @@ class MyWindow(QtWidgets.QMainWindow):
             description = dialog.description.toPlainText()
             message = request.create_task(name=topic, description=description)
             self.input_queue.put(message)
-            # self.get_all_task()
 
         dialog.addTask.clicked.connect(task_create)
+        dialog.addTask.clicked.connect(dialog.accept)
+        dialog.exec()
+
+    def task(self):
+        dialog = uic.loadUi('gui/templates/task_create.ui')
+        dialog.topic.setText(self.ui.taskList.currentItem().text())
+        dialog.addTask.setFocus()
+
+        def task_update():
+            pass
+
+        dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
