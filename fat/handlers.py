@@ -169,15 +169,16 @@ def create_task(message):
 def create_task(message):
     if message['body']['code'] == 201:
         creator = data['username']
-        # task_id = data['create_task']['body'].get('id')
+        server_task_id = message['body'].get('id')
         task_name = data['create_task']['body'].get('name')
         task_description = data['create_task']['body'].get('description')
         data.pop('create_task')
 
         task = Task(creator=creator, viewer=creator, name=task_name)
         task.description = task_description
+        task.id = server_task_id
         task = task.task_dict
-        print(task)
+        print('task->', task)
 
         data['db'].add_task(task)
     else:
@@ -192,9 +193,7 @@ def edit_task(message):
     print('edit task ->', message)
     data['edit_task'] = message
     block_queue()
-    print(1)
     send_message(message)
-    print(2)
 
 
 @handler.conditional_socket_handler("server response", "edit task")
@@ -218,13 +217,18 @@ def edit_task(message):
 @handler.conditional_queue_handler('action', 'get all tasks')
 def get_all_tasks(message):
     block_queue()
-    print(1)
     send_message(message)
-    print(2)
 
 
 @handler.conditional_socket_handler("server response", "get all tasks")
 def get_all_tasks(message):
-    print(message)
+    '''обновим в бд все server_task_id согласно полученному сообщению'''
+    print('get all tasks->', message)
     put_message(message)
+    if message['body']['code'] == 200:
+        for key, value in message['body']['message'].items():
+            task_id = data['db'].get_task_id_by_name(value)
+            data['db'].set_task_id(task_id, key)
+
+    # put_message(message)
     release_queue()
