@@ -85,10 +85,11 @@ D. Функция, вызываемая в случае отключенного
 * декорируемые функции могут иметь одинаковые названия
 """
 
-handler = handlers_base.FatThing("127.0.0.1", 8000)
+# handler = handlers_base.FatThing("127.0.0.1", 8000)
 
 
-# handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
+handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
+# handler = handlers_base.FatThing("185.189.12.43", 8000)
 
 
 # handler = handlers_base.FatThing("127.0.0.1", 8888)
