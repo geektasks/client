@@ -34,8 +34,8 @@ comments: {comments}\n>>>>>'.format(name=self._name,
                                     deadline=self.deadline_time,
                                     status=self.status,
                                     description=self._description,
-                                    performers=self._performer_user,
-                                    access=self._access_users,
+                                    performers=self._performers,
+                                    access=self._watchers,
                                     comments=self.comments)
 
     @property
