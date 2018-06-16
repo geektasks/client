@@ -119,6 +119,22 @@ def registration(message):
     put_message(message)
     release_queue()
 
+@handler.conditional_socket_handler('server response', 'registration error')
+def registration(message):
+    put_message(message)
+    release_queue()
+
+@handler.conditional_queue_handler("action", "check user")
+def check_user(message):
+    block_queue()
+    send_message(message)
+
+@handler.conditional_socket_handler('server response', 'check user')
+def check_user(message):
+    print(message)
+    put_message(message)
+    release_queue()
+
 
 @handler.conditional_queue_handler("action", "authorization")
 def authorization(message):
@@ -153,17 +169,19 @@ def create_task(message):
 def create_task(message):
     if message['body']['code'] == 201:
         creator = data['username']
-        # task_id = data['create_task']['body'].get('id')
+        server_task_id = message['body'].get('id')
         task_name = data['create_task']['body'].get('name')
         task_description = data['create_task']['body'].get('description')
         data.pop('create_task')
 
         task = Task(creator=creator, viewer=creator, name=task_name)
         task.description = task_description
+        task.id = int(server_task_id)
         task = task.task_dict
-        print(task)
+        print('task->', task)
 
         data['db'].add_task(task)
+
     else:
         print(message['body']['code'], message['body']['message'])
 
@@ -176,10 +194,7 @@ def edit_task(message):
     print('edit task ->', message)
     data['edit_task'] = message
     block_queue()
-    print(1)
     send_message(message)
-    print(2)
-
 
 @handler.conditional_socket_handler("server response", "edit task")
 def edit_task(message):
@@ -196,5 +211,17 @@ def edit_task(message):
     else:
         print(message['body']['code'], message['body']['message'])
 
+    put_message(message)
+    release_queue()
+
+@handler.conditional_queue_handler('action', 'get all tasks')
+def get_all_tasks(message):
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler("server response", "get all tasks")
+def get_all_tasks(message):
+    print(message)
     put_message(message)
     release_queue()

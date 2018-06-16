@@ -13,6 +13,7 @@ class Task:
         :param viewer: имя Пользователя, кто просматривает задачу
         :param name: название задачи, если не установленно, то New task
         '''
+        self.server_task_id = None
         self._creator = creator
         self.viewer = viewer
         self._name = 'New task' if not name else name  # если задача с таким именем уже есть добавить суффикс _1(2, 3...)
@@ -34,8 +35,8 @@ comments: {comments}\n>>>>>'.format(name=self._name,
                                     deadline=self.deadline_time,
                                     status=self.status,
                                     description=self._description,
-                                    performers=self._performer_user,
-                                    access=self._access_users,
+                                    performers=self._performers,
+                                    access=self._watchers,
                                     comments=self.comments)
 
     @property

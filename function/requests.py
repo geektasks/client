@@ -42,11 +42,11 @@ def presence(name):
 
 
 def create_task(name, description):
-    print(handlers.handler.data['session_id'])
+    print('session_id->', handlers.handler.data['session_id'])
     try:
-        session.session_id = handlers.handler.data['session_id']
+        session.session_id = int(handlers.handler.data['session_id'])
     except Exception as err:
-        print(err)
+        print('error->', err)
     message = session.create_task(name=name, description=description).jim_dict
     return message
 
@@ -55,8 +55,17 @@ def edit_task(task_id, name=None, description=None):
     try:
         session.session_id = handlers.handler.data['session_id']
     except Exception as err:
-        print(err)
+        print('error*->', err)
     message = session.edit_task(task_id=task_id, name=name, description=description).jim_dict
+    return message
+
+def get_all_tasks():
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error**->', err)
+    message = session.get_all_tasks().jim_dict
+    print(message)
     return message
 
 

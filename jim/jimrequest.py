@@ -79,6 +79,9 @@ class JIMRequest:
         if name and description:
             return JIMRequest(session_id=self.session_id, id=task_id, name=name, description=description)
 
+    def get_all_tasks(self):
+        return JIMRequest(session_id= self.session_id)
+
     def grant_access(self, task_id, user):
         return JIMRequest(session_id=self.session_id, id=task_id, user=user)
 
@@ -137,6 +140,10 @@ if __name__ == '__main__':
 
     print('-' * 50)
     # session.session_id = 0
+
+    print('get task')
+    get_task = session.get_all_task().jim_dict
+    print(get_task)
 
     edit_name = session.edit_task(task_id=1, name='Edit name').jim_dict
     print('edit name', edit_name)
