@@ -85,10 +85,10 @@ D. Функция, вызываемая в случае отключенного
 * декорируемые функции могут иметь одинаковые названия
 """
 
-# handler = handlers_base.FatThing("127.0.0.1", 8000)
+handler = handlers_base.FatThing("127.0.0.1", 8000)
 
 
-handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
+# handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
 # handler = handlers_base.FatThing("185.189.12.43", 8000)
 
 
@@ -200,6 +200,7 @@ def edit_task(message):
 
 @handler.conditional_socket_handler("server response", "edit task")
 def edit_task(message):
+    print(1)
     if message['body']['code'] == 200:
         task_name = data['edit_task']['body'].get('name')
         task_description = data['edit_task']['body'].get('description')
