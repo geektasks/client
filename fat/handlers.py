@@ -85,10 +85,11 @@ D. Функция, вызываемая в случае отключенного
 * декорируемые функции могут иметь одинаковые названия
 """
 
-handler = handlers_base.FatThing("127.0.0.1", 8000)
+# handler = handlers_base.FatThing("127.0.0.1", 8000)
 
 
-# handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
+handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
+# handler = handlers_base.FatThing("185.189.12.43", 8000)
 
 
 # handler = handlers_base.FatThing("127.0.0.1", 8888)
@@ -196,6 +197,7 @@ def edit_task(message):
     block_queue()
     send_message(message)
 
+
 @handler.conditional_socket_handler("server response", "edit task")
 def edit_task(message):
     if message['body']['code'] == 200:
@@ -222,6 +224,13 @@ def get_all_tasks(message):
 
 @handler.conditional_socket_handler("server response", "get all tasks")
 def get_all_tasks(message):
-    print(message)
+    '''обновим в бд все server_task_id согласно полученному сообщению'''
+    print('get all tasks->', message)
     put_message(message)
+    if message['body']['code'] == 200:
+        for key, value in message['body']['message'].items():
+            task_id = data['db'].get_task_id_by_name(value)
+            data['db'].set_task_id(task_id, key)
+
+    # put_message(message)
     release_queue()

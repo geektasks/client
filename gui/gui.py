@@ -15,6 +15,7 @@ class MyWindow(QtWidgets.QMainWindow):
     gotErrorRegistration = QtCore.pyqtSignal(dict)
     gotCreatedTask = QtCore.pyqtSignal(dict)
     gotUpdateTaskList = QtCore.pyqtSignal(dict)
+    gotAutorization = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent = None):
 
@@ -26,7 +27,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.NAME = {
             'registration': self.gotConsole,
             'registration error': self.gotErrorRegistration,
-            'authorization': self.gotConsole,
+            'authorization': self.gotAutorization,
             'check user': self.gotCheck,
             'create task': self.gotCreatedTask,
             'get all tasks': self.gotUpdateTaskList}
@@ -37,11 +38,13 @@ class MyWindow(QtWidgets.QMainWindow):
         self.start_monitor()
 
         self.ui.action_login.triggered.connect(self.sign_in)
+        self.ui.taskList.doubleClicked.connect(self.task)
 
         self.gotConsole.connect(self.update_console)
         self.gotErrorRegistration.connect(self.update_error)
         self.gotCreatedTask.connect(self.created_task_response)
         self.gotUpdateTaskList.connect(self.update_tasks_list)
+        self.gotAutorization.connect(self.autorization_request)
 
     def start_monitor(self):
         t1 = threading.Thread(target= self.monitor)
@@ -53,16 +56,16 @@ class MyWindow(QtWidgets.QMainWindow):
         self.input_queue = self.handler.input_queue
         self.output_queue = self.handler.output_queue
 
-    def closeEvent(dialog, e):
-        result = QtWidgets.QMessageBox.question(dialog,
+    def closeEvent(self, e):
+        result = QtWidgets.QMessageBox.question(self,
                        "Confirmation",
                        "Do you really want to close window with tasks?",
                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                        QtWidgets.QMessageBox.No)
         if result == QtWidgets.QMessageBox.Yes:
-            dialog.handler.stop()
+            self.handler.stop()
             e.accept()
-            QtWidgets.QWidget.closeEvent(dialog, e)
+            QtWidgets.QWidget.closeEvent(self, e)
         else:
             e.ignore()
 
@@ -101,7 +104,10 @@ class MyWindow(QtWidgets.QMainWindow):
     def registration(self):
         dialog_reg = uic.loadUi('gui/templates/sign_up.ui')
         dialog_reg.login.setFocus()
-        dialog_reg.flag = True
+        # pixmap = QtGui.QPixmap('gui/icon/error.png')
+        # dialog_reg.label_4.resize(23, 23)
+        # dialog_reg.label_4.setPixmap(pixmap)
+        dialog_reg.flag = None
 
         def reg():
             name = dialog_reg.login.text()
@@ -117,8 +123,14 @@ class MyWindow(QtWidgets.QMainWindow):
 
         def check_login():
             text = dialog_reg.login.text()
-            message = request.check_user(text)
-            self.input_queue.put(message)
+            if text == '':
+                pixmap = QtGui.QPixmap('gui/icon/error.png')
+                dialog_reg.label_4.resize(23, 23)
+                dialog_reg.label_4.setPixmap(pixmap)
+                dialog_reg.flag = None
+            else:
+                message = request.check_user(text)
+                self.input_queue.put(message)
 
         @QtCore.pyqtSlot(dict)
         def label_check_user(body):
@@ -168,9 +180,20 @@ class MyWindow(QtWidgets.QMainWindow):
             description = dialog.description.toPlainText()
             message = request.create_task(name=topic, description=description)
             self.input_queue.put(message)
-            # self.get_all_task()
 
         dialog.addTask.clicked.connect(task_create)
+        dialog.addTask.clicked.connect(dialog.accept)
+        dialog.exec()
+
+    def task(self):
+        dialog = uic.loadUi('gui/templates/task_create.ui')
+        dialog.topic.setText(self.ui.taskList.currentItem().text())
+        dialog.addTask.setFocus()
+
+        def task_update():
+            pass
+
+        dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
@@ -203,5 +226,13 @@ class MyWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def update_tasks_list(self, body):
-        for task in body['message']:
-            self.ui.taskList.addItem(str(task))
+        for task_key, task_value in body['message'].items():
+            self.ui.taskList.addItem(str(task_value))
+
+    @QtCore.pyqtSlot(dict)
+    def autorization_request(self, body):
+        if body['code'] == 200:
+            self.get_all_task()
+            self.update_console(body)
+        else:
+            self.update_console(body)

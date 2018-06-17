@@ -68,6 +68,8 @@ def get_all_tasks():
     print(message)
     return message
 
+def get_task_by_id():
+    pass
 
 def grant_access(task_id, user):
     message = session.grant_access(task_id=task_id, user=user).jim_dict
