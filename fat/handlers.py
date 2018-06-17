@@ -105,7 +105,9 @@ def init_func():
 @handler.conditional_queue_handler("action", "registration")
 def registration(message):
     username = message['body']['name']
+    password = message['body']['password']
     data['username'] = username
+    data['password'] = password
     block_queue()
     send_message(message)
 
@@ -114,6 +116,14 @@ def registration(message):
 def registration(message):
     if message['body']['code'] == 201:
         data['db'].add_user(data['username'])
+
+        auth_request = {'head': {'type': 'action', 'name': 'authorization'},
+                        'body': {'password': data['password'], 'name': data['username']}}
+
+        block_queue()
+        send_message(auth_request)
+        data.pop('password')
+
     else:
         data['username'] = None
         print(message['body']['code'], message['body']['message'])
