@@ -187,7 +187,11 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def task(self):
         dialog = uic.loadUi('gui/templates/task_create.ui')
-        dialog.topic.setText(self.ui.taskList.currentItem().text())
+        task = self.ui.taskList.currentItem().text()
+        task =  task.split(' ', maxsplit = 1)
+        task_id = task[0]
+        task_name = task[1]
+        dialog.topic.setText(task_name)
         dialog.addTask.setFocus()
 
         def task_update():
@@ -227,7 +231,7 @@ class MyWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(dict)
     def update_tasks_list(self, body):
         for task_key, task_value in body['message'].items():
-            self.ui.taskList.addItem(str(task_value))
+            self.ui.taskList.addItem('{} {}'.format(task_key, task_value))
 
     @QtCore.pyqtSlot(dict)
     def autorization_request(self, body):
