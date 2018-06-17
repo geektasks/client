@@ -120,15 +120,18 @@ def registration(message):
     put_message(message)
     release_queue()
 
+
 @handler.conditional_socket_handler('server response', 'registration error')
 def registration(message):
     put_message(message)
     release_queue()
 
+
 @handler.conditional_queue_handler("action", "check user")
 def check_user(message):
     block_queue()
     send_message(message)
+
 
 @handler.conditional_socket_handler('server response', 'check user')
 def check_user(message):
@@ -177,11 +180,12 @@ def create_task(message):
 
         task = Task(creator=creator, viewer=creator, name=task_name)
         task.description = task_description
-        task.id = server_task_id
+        task.id = int(server_task_id)
         task = task.task_dict
         print('task->', task)
 
         data['db'].add_task(task)
+
     else:
         print(message['body']['code'], message['body']['message'])
 
@@ -199,22 +203,31 @@ def edit_task(message):
 
 @handler.conditional_socket_handler("server response", "edit task")
 def edit_task(message):
-    print(1)
+    print('data edit task->', data['edit_task'])
     if message['body']['code'] == 200:
         task_name = data['edit_task']['body'].get('name')
         task_description = data['edit_task']['body'].get('description')
-        task_id = data['db'].get_task_id_by_name(task_name=task_name)
-        data.pop('edit_task')
-        if task_name:
-            data['db'].change_task_name(task_id=task_id, task_name=task_name)
-        if task_description:
-            data['db'].change_task_description(task_id=task_id, task_description=task_name)
+        server_task_id = data['edit_task']['body'].get('id')
+        print('task id->', server_task_id)
+        local_task_id = data['db'].get_local_task_id(server_task_id)
 
+        if task_name:
+            # print('хочу изменить имя в локальной бд')
+            # print('имя', task_name)
+            data['db'].change_task_name(task_id=local_task_id, task_name=task_name)
+            # print('изменил имя')
+        if task_description:
+            # print('хочу изменить описание в локальной бд')
+            # print('описание', task_description)
+            data['db'].change_task_description(task_id=local_task_id, task_description=task_description)
+            # print('изменил описание')
     else:
         print(message['body']['code'], message['body']['message'])
 
+    data.pop('edit_task')
     put_message(message)
     release_queue()
+
 
 @handler.conditional_queue_handler('action', 'get all tasks')
 def get_all_tasks(message):
@@ -228,9 +241,17 @@ def get_all_tasks(message):
     print('get all tasks->', message)
     put_message(message)
     if message['body']['code'] == 200:
-        for key, value in message['body']['message'].items():
-            task_id = data['db'].get_task_id_by_name(value)
-            data['db'].set_task_id(task_id, key)
+        for server_task_id, task_name in message['body']['message'].items():
+            task_id = data['db'].get_task_id_by_name(task_name)
 
-    # put_message(message)
+            if task_id:
+                data['db'].set_task_id(task_id, server_task_id)
+            else:
+                creator = data['username']
+                task = Task(creator=creator, name=task_name)
+                task.id = int(server_task_id)
+                task = task.task_dict
+                print('task->', task)
+                data['db'].add_task(task)
+
     release_queue()

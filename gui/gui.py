@@ -15,6 +15,7 @@ class MyWindow(QtWidgets.QMainWindow):
     gotCreatedTask = QtCore.pyqtSignal(dict)
     gotUpdateTaskList = QtCore.pyqtSignal(dict)
     gotAutorization = QtCore.pyqtSignal(dict)
+    gotEditedTask = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -29,7 +30,8 @@ class MyWindow(QtWidgets.QMainWindow):
             'authorization': self.gotAutorization,
             'check user': self.gotCheck,
             'create task': self.gotCreatedTask,
-            'get all tasks': self.gotUpdateTaskList}
+            'get all tasks': self.gotUpdateTaskList,
+            'edit task': self.gotEditedTask}
 
         self.handler = handler
         self.start_handler()
@@ -43,6 +45,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotCreatedTask.connect(self.created_task_response)
         self.gotUpdateTaskList.connect(self.update_tasks_list)
         self.gotAutorization.connect(self.autorization_request)
+        self.gotEditedTask.connect(self.edited_task_response)
 
     def start_monitor(self):
         t1 = threading.Thread(target=self.monitor)
@@ -84,7 +87,7 @@ class MyWindow(QtWidgets.QMainWindow):
     def monitor(self):
         while 1:
             data = self.output_queue.get()
-            print(data)
+            print('обрабатываем в гуи', data)
             body = data['body']
             try:
                 if data['head']['name'] in self.NAME:
@@ -186,22 +189,20 @@ class MyWindow(QtWidgets.QMainWindow):
     def task(self):
         dialog = uic.loadUi('gui/templates/task_create.ui')
         task = self.ui.taskList.currentItem().text()
-        task =  task.split(' ', maxsplit = 1)
-        task_id = task[0]
+        task = task.split(' ', maxsplit=1)
+        task_id = int(task[0])  # server_task_id
         task_name = task[1]
         dialog.topic.setText(task_name)
         dialog.addTask.setFocus()
 
         def task_update():
-            # server_task_id = 1
             topic = dialog.topic.text()
             description = dialog.description.toPlainText()
-
-            if topic:
-                message = request.edit_task(task_id=server_task_id, name=topic)
+            if topic != task_name:
+                message = request.edit_task(task_id=task_id, name=topic)
                 self.input_queue.put(message)
             if description:
-                message = request.edit_task(task_id=server_task_id, description=description)
+                message = request.edit_task(task_id=task_id, description=description)
                 self.input_queue.put(message)
 
         dialog.addTask.clicked.connect(task_update)
@@ -211,7 +212,7 @@ class MyWindow(QtWidgets.QMainWindow):
     def get_all_task(self):
         self.ui.taskList.clear()
         message = request.get_all_tasks()
-        print(message)
+        print('get all tasks from gui', message)
         self.input_queue.put(message)
 
         ###############################################################################################################
@@ -247,3 +248,13 @@ class MyWindow(QtWidgets.QMainWindow):
             self.update_console(body)
         else:
             self.update_console(body)
+
+    # баг: если редактировать одновременно имя и описание,
+    # то задача дублируется в списке
+    @QtCore.pyqtSlot(dict)
+    def edited_task_response(self, body):
+        if body['code'] == 200:
+            self.get_all_task()
+            self.update_console(body)
+
+
