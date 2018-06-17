@@ -52,6 +52,7 @@ def create_task(name, description):
 
 
 def edit_task(task_id, name=None, description=None):
+    '''task_id == server_task_id'''
     try:
         session.session_id = handlers.handler.data['session_id']
     except Exception as err:

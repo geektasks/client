@@ -8,7 +8,6 @@ from fat.handlers import handler
 import function.requests as request
 
 
-
 class MyWindow(QtWidgets.QMainWindow):
     gotCheck = QtCore.pyqtSignal(dict)
     gotConsole = QtCore.pyqtSignal(dict)
@@ -17,7 +16,7 @@ class MyWindow(QtWidgets.QMainWindow):
     gotUpdateTaskList = QtCore.pyqtSignal(dict)
     gotAutorization = QtCore.pyqtSignal(dict)
 
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
 
         super().__init__(parent)
         self.ui = ui_class()
@@ -31,7 +30,6 @@ class MyWindow(QtWidgets.QMainWindow):
             'check user': self.gotCheck,
             'create task': self.gotCreatedTask,
             'get all tasks': self.gotUpdateTaskList}
-
 
         self.handler = handler
         self.start_handler()
@@ -47,7 +45,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotAutorization.connect(self.autorization_request)
 
     def start_monitor(self):
-        t1 = threading.Thread(target= self.monitor)
+        t1 = threading.Thread(target=self.monitor)
         t1.daemon = True
         t1.start()
 
@@ -58,10 +56,10 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, e):
         result = QtWidgets.QMessageBox.question(self,
-                       "Confirmation",
-                       "Do you really want to close window with tasks?",
-                       QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                       QtWidgets.QMessageBox.No)
+                                                "Confirmation",
+                                                "Do you really want to close window with tasks?",
+                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                                                QtWidgets.QMessageBox.No)
         if result == QtWidgets.QMessageBox.Yes:
             self.handler.stop()
             e.accept()
@@ -99,6 +97,7 @@ class MyWindow(QtWidgets.QMainWindow):
                     print('unknown_response')
             except Exception as err:
                 print(err)
+
     ####################################################################################################################
 
     def registration(self):
@@ -145,7 +144,6 @@ class MyWindow(QtWidgets.QMainWindow):
                 dialog_reg.label_4.setPixmap(pixmap)
                 dialog_reg.flag = None
 
-
         self.gotCheck.connect(label_check_user)
         dialog_reg.login.textChanged.connect(check_login)
         dialog_reg.ok.clicked.connect(reg)
@@ -191,7 +189,16 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.setFocus()
 
         def task_update():
-            pass
+            # server_task_id = 1
+            topic = dialog.topic.text()
+            description = dialog.description.toPlainText()
+
+            if topic:
+                message = request.edit_task(task_id=server_task_id, name=topic)
+                self.input_queue.put(message)
+            if description:
+                message = request.edit_task(task_id=server_task_id, description=description)
+                self.input_queue.put(message)
 
         dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)

@@ -72,6 +72,7 @@ class JIMRequest:
         return JIMRequest(session_id=self.session_id, name=name, description=description)
 
     def edit_task(self, task_id, name=None, description=None):
+        '''task_id == server_task_id'''
         if name:
             return JIMRequest(session_id=self.session_id, id=task_id, name=name)
         if description:
