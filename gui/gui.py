@@ -16,6 +16,7 @@ class MyWindow(QtWidgets.QMainWindow):
     gotUpdateTaskList = QtCore.pyqtSignal(dict)
     gotAutorization = QtCore.pyqtSignal(dict)
     gotEditedTask = QtCore.pyqtSignal(dict)
+    gotTaskId = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -31,6 +32,7 @@ class MyWindow(QtWidgets.QMainWindow):
             'check user': self.gotCheck,
             'create task': self.gotCreatedTask,
             'get all tasks': self.gotUpdateTaskList,
+            'get task by id': self.gotTaskId,
             'edit task': self.gotEditedTask}
 
         self.handler = handler
@@ -192,6 +194,9 @@ class MyWindow(QtWidgets.QMainWindow):
         task = task.split(' ', maxsplit=1)
         task_id = int(task[0])  # server_task_id
         task_name = task[1]
+        message = request.get_task_by_id(task_id)
+        print('тратратартартатратрараттаратраэ',message)
+        self.input_queue.put(message)
         dialog.topic.setText(task_name)
         dialog.addTask.setFocus()
 
@@ -205,6 +210,11 @@ class MyWindow(QtWidgets.QMainWindow):
                 message = request.edit_task(task_id=task_id, description=description)
                 self.input_queue.put(message)
 
+        @QtCore.pyqtSlot(dict)
+        def get_task(body):
+            dialog.description.setText(body['description'])
+
+        self.gotTaskId.connect(get_task)
         dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
