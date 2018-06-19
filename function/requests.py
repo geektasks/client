@@ -112,6 +112,9 @@ def delete_comment(comment_id):
     message = session.delete_comment(comment_id=comment_id).jim_dict
     return message
 
+def search_user(name):
+    message = session.search_user(name=name).jim_dict
+    return message
 
 if __name__ == '__main__':
     pass

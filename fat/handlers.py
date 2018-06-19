@@ -277,3 +277,15 @@ def get_task_by_id(message):
     print('get task->', message)
     put_message(message)
     release_queue()
+
+@handler.conditional_queue_handler('action', 'search user')
+def search_user(message):
+    block_queue()
+    send_message(message)
+
+@handler.conditional_socket_handler("server response", "search user")
+def search_user(message):
+    '''обновим в бд все server_task_id согласно полученному сообщению'''
+    print('search user->', message)
+    put_message(message)
+    release_queue()
