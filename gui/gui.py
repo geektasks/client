@@ -248,7 +248,6 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.exec()
 
     def get_all_task(self):
-        self.ui.taskList.clear()
         message = request.get_all_tasks()
         print('get all tasks from gui', message)
         self.input_queue.put(message)
@@ -276,6 +275,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def update_tasks_list(self, body):
+        self.ui.taskList.clear()
         for task_key, task_value in body['message'].items():
             self.ui.taskList.addItem('{} {}'.format(task_key, task_value))
 
