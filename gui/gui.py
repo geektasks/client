@@ -195,7 +195,6 @@ class MyWindow(QtWidgets.QMainWindow):
         task_id = int(task[0])  # server_task_id
         task_name = task[1]
         message = request.get_task_by_id(task_id)
-        print('тратратартартатратрараттаратраэ',message)
         self.input_queue.put(message)
         dialog.topic.setText(task_name)
         dialog.addTask.setFocus()
