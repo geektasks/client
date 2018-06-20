@@ -35,7 +35,10 @@ class MyWindow(QtWidgets.QMainWindow):
             'get all tasks': self.gotUpdateTaskList,
             'get task by id': self.gotTaskId,
             'edit task': self.gotEditedTask,
-            'search user': self.gotSearchUser}
+            'search user': self.gotSearchUser,
+            # 'assign performer': 1,
+            # 'grant access': 1
+        }
 
         self.handler = handler
         self.start_handler()
@@ -231,7 +234,12 @@ class MyWindow(QtWidgets.QMainWindow):
                     dialog.listUser.addItem(user)
 
             def add():
+                # task_id = server_task_id
                 username = dialog.listUser.currentItem().text()
+                message = request.assign_performer(task_id=task_id, user=username)
+                self.input_queue.put(message)
+                message = request.grant_access(task_id=task_id, user=username)
+                self.input_queue.put(message)
                 dialog.close()
 
             self.gotSearchUser.connect(update_user)
