@@ -265,3 +265,27 @@ def get_all_tasks(message):
                 data['db'].add_task(task)
 
     release_queue()
+
+@handler.conditional_queue_handler('action', 'get task by id')
+def get_task_by_id(message):
+    block_queue()
+    send_message(message)
+
+@handler.conditional_socket_handler("server response", "get task by id")
+def get_task_by_id(message):
+    '''обновим в бд все server_task_id согласно полученному сообщению'''
+    print('get task->', message)
+    put_message(message)
+    release_queue()
+
+@handler.conditional_queue_handler('action', 'search user')
+def search_user(message):
+    block_queue()
+    send_message(message)
+
+@handler.conditional_socket_handler("server response", "search user")
+def search_user(message):
+    '''обновим в бд все server_task_id согласно полученному сообщению'''
+    print('search user->', message)
+    put_message(message)
+    release_queue()

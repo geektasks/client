@@ -16,6 +16,8 @@ class MyWindow(QtWidgets.QMainWindow):
     gotUpdateTaskList = QtCore.pyqtSignal(dict)
     gotAutorization = QtCore.pyqtSignal(dict)
     gotEditedTask = QtCore.pyqtSignal(dict)
+    gotTaskId = QtCore.pyqtSignal(dict)
+    gotSearchUser = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -31,7 +33,9 @@ class MyWindow(QtWidgets.QMainWindow):
             'check user': self.gotCheck,
             'create task': self.gotCreatedTask,
             'get all tasks': self.gotUpdateTaskList,
-            'edit task': self.gotEditedTask}
+            'get task by id': self.gotTaskId,
+            'edit task': self.gotEditedTask,
+            'search user': self.gotSearchUser}
 
         self.handler = handler
         self.start_handler()
@@ -192,6 +196,8 @@ class MyWindow(QtWidgets.QMainWindow):
         task = task.split(' ', maxsplit=1)
         task_id = int(task[0])  # server_task_id
         task_name = task[1]
+        message = request.get_task_by_id(task_id)
+        self.input_queue.put(message)
         dialog.topic.setText(task_name)
         dialog.addTask.setFocus()
 
@@ -205,8 +211,40 @@ class MyWindow(QtWidgets.QMainWindow):
                 message = request.edit_task(task_id=task_id, description=description)
                 self.input_queue.put(message)
 
+        @QtCore.pyqtSlot(dict)
+        def get_task(body):
+            dialog.description.setText(body['description'])
+
+        def add_people():
+            dialog = uic.loadUi('gui/templates/users.ui')
+
+            def search_user():
+                text = dialog.userName.text()
+                dialog.listUser.clear()
+                message = request.search_user(text)
+                self.input_queue.put(message)
+
+            @QtCore.pyqtSlot(dict)
+            def update_user(body):
+                print(body)
+                for user in body['users']:
+                    dialog.listUser.addItem(user)
+
+            def add():
+                username = dialog.listUser.currentItem().text()
+                dialog.close()
+
+            self.gotSearchUser.connect(update_user)
+
+            dialog.listUser.doubleClicked.connect(add)
+            dialog.userName.textChanged.connect(search_user)
+            dialog.exec()
+
+        self.gotTaskId.connect(get_task)
+        dialog.addPeople.clicked.connect(add_people)
         dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
+        dialog.cancel.clicked.connect(dialog.close)
         dialog.exec()
 
     def get_all_task(self):

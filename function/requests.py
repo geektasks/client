@@ -69,8 +69,13 @@ def get_all_tasks():
     print(message)
     return message
 
-def get_task_by_id():
-    pass
+def get_task_by_id(task_id):
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error**->', err)
+    message = session.get_task_by_id(task_id).jim_dict
+    return message
 
 def grant_access(task_id, user):
     message = session.grant_access(task_id=task_id, user=user).jim_dict
@@ -107,6 +112,9 @@ def delete_comment(comment_id):
     message = session.delete_comment(comment_id=comment_id).jim_dict
     return message
 
+def search_user(name):
+    message = session.search_user(name=name).jim_dict
+    return message
 
 if __name__ == '__main__':
     pass
