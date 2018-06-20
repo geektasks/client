@@ -266,10 +266,12 @@ def get_all_tasks(message):
 
     release_queue()
 
+
 @handler.conditional_queue_handler('action', 'get task by id')
 def get_task_by_id(message):
     block_queue()
     send_message(message)
+
 
 @handler.conditional_socket_handler("server response", "get task by id")
 def get_task_by_id(message):
@@ -278,10 +280,12 @@ def get_task_by_id(message):
     put_message(message)
     release_queue()
 
+
 @handler.conditional_queue_handler('action', 'search user')
 def search_user(message):
     block_queue()
     send_message(message)
+
 
 @handler.conditional_socket_handler("server response", "search user")
 def search_user(message):
@@ -289,3 +293,47 @@ def search_user(message):
     print('search user->', message)
     put_message(message)
     release_queue()
+
+
+@handler.conditional_queue_handler('action', 'assign performer')
+def assign_performer(message):
+    print('assign->', message)
+    data['assign_performer'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'assign performer')
+def assign_performer(message):
+    if message['body']['code'] == 200:
+        task_id = int(data['assign_performer']['body']['id'])
+        username = data['assign_performer']['body']['user']
+        data['db'].add_performer(task_id=task_id, user_name=username)  # task_id локальный
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('assign_performer')
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'grant access')
+def grant_access(message):
+    print('grant access->', message)
+    data['grant_access'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'grant access')
+def grant_access(message):
+    if message['body']['code'] == 200:
+        task_id = int(data['grant_access']['body']['id'])
+        username = data['grant_access']['body']['user']
+        data['db'].add_watcher(task_id=task_id, user_name=username)  # task_id локальный
+    else:
+        print(message['body']['code'], message['body']['message'])
+
+    data.pop('grant_access')
+    put_message(message)
+    release_queue()
+
