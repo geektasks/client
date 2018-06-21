@@ -337,3 +337,28 @@ def grant_access(message):
     put_message(message)
     release_queue()
 
+
+@handler.conditional_queue_handler('action', 'get all performers')
+def get_all_performers(message):
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'get all performers')
+def get_all_performers(message):
+    print('get all performers->', message)
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'get all watchers')
+def get_all_watchers(message):
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'get all watchers')
+def get_all_watchers(message):
+    print('get all watchers->', message)
+    put_message(message)
+    release_queue()
