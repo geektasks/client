@@ -2,6 +2,7 @@ import sys
 import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from gui.templates.main_form import Ui_MainWindow as ui_class
+from time import sleep
 
 # from gui.monitor import Monitor
 from fat.handlers import handler
