@@ -2,10 +2,39 @@ import sys
 import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from gui.templates.main_form import Ui_MainWindow as ui_class
+from time import sleep
 
 # from gui.monitor import Monitor
 from fat.handlers import handler
 import function.requests as request
+
+class CThread_monitor(QtCore.QThread):
+    def __init__ (self,output_queue,NAME):
+        super().__init__()
+        self.isRun = True
+        self.output_queue=output_queue
+        self.NAME=NAME
+    def run (self):
+        while self.isRun:
+            if not self.output_queue.empty:
+                data = self.output_queue.get(timeout=1000)
+                print('обрабатываем в гуи', data)
+                body = data['body']
+                try:
+                    if  data['head']['name'] in self.NAME:
+                        print(data['head']['name'])
+                        controller = self.NAME.get(data['head']['name'])
+                        print('сообщение для вывода в гуи', data)
+                        controller.emit(body)
+                    else:
+                        print(data['head']['name'])
+                        print('unknown_response')
+                except Exception as err:
+                    print(err)
+            else:
+                sleep(.300)
+
+
 
 
 class MyWindow(QtWidgets.QMainWindow):
@@ -42,6 +71,8 @@ class MyWindow(QtWidgets.QMainWindow):
         self.start_monitor()
 
         self.ui.action_login.triggered.connect(self.sign_in)
+        self.ui.action_exit.triggered.connect(self.exit)
+
         self.ui.taskList.doubleClicked.connect(self.task)
 
         self.gotConsole.connect(self.update_console)
@@ -51,10 +82,10 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotAutorization.connect(self.autorization_request)
         self.gotEditedTask.connect(self.edited_task_response)
 
+
     def start_monitor(self):
-        t1 = threading.Thread(target=self.monitor)
-        t1.daemon = True
-        t1.start()
+        self.t1 = CThread_monitor(self.output_queue,self.NAME)
+        self.t1.start()
 
     def start_handler(self):
         self.handler.run()
@@ -88,22 +119,11 @@ class MyWindow(QtWidgets.QMainWindow):
     ####################################################################################################################
     ########функция обработки сообщений от сервера################################################################
     ####################################################################################################################
-    def monitor(self):
-        while 1:
-            data = self.output_queue.get()
-            print('обрабатываем в гуи', data)
-            body = data['body']
-            try:
-                if data['head']['name'] in self.NAME:
-                    print(data['head']['name'])
-                    controller = self.NAME.get(data['head']['name'])
-                    print('сообщение для вывода в гуи', data)
-                    controller.emit(body)
-                else:
-                    print(data['head']['name'])
-                    print('unknown_response')
-            except Exception as err:
-                print(err)
+    #   def monitor(self,id,stop):
+    #
+    #    while True:
+    #       pass
+    # Функция монитор пернесена в класс.
 
     ####################################################################################################################
 
@@ -175,6 +195,24 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.registration.clicked.connect(self.registration)
         dialog.cancel.clicked.connect(sys.exit)
         dialog.exec()
+
+
+    def exit(self):
+        print('0')
+        self.handler.stop()
+        print('1')
+        self.t1.isRun=False
+        if (not self.t1.wait(5000)):  # Ждать завершения потока 5 секунд
+            self.t1.terminate()
+        print('2')
+
+        sys.exit(0)
+    def get_all_task(self):
+        message = request.get_all_tasks()
+        print('get all tasks from gui', message)
+        self.input_queue.put(message)
+
+
 
     def on_createTask_pressed(self):
         dialog = uic.loadUi('gui/templates/task_create.ui')
@@ -294,5 +332,4 @@ class MyWindow(QtWidgets.QMainWindow):
         if body['code'] == 200:
             self.get_all_task()
             self.update_console(body)
-
 
