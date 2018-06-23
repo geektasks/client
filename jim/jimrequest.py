@@ -81,10 +81,10 @@ class JIMRequest:
             return JIMRequest(session_id=self.session_id, id=task_id, name=name, description=description)
 
     def get_all_tasks(self):
-        return JIMRequest(session_id= self.session_id)
+        return JIMRequest(session_id=self.session_id)
 
     def get_task_by_id(self, task_id):
-        return JIMRequest(session_id= self.session_id, id= task_id)
+        return JIMRequest(session_id=self.session_id, id=task_id)
 
     def grant_access(self, task_id, user):
         return JIMRequest(session_id=self.session_id, id=task_id, user=user)
@@ -116,6 +116,15 @@ class JIMRequest:
 
     def search_user(self, name):
         return JIMRequest(session_id=self.session_id, name=name)
+
+    def get_all_performers(self, task_id):
+        '''task_id = server_task_id'''
+        return JIMRequest(session_id=self.session_id, id=task_id)
+
+    def get_all_watchers(self, task_id):
+        '''task_id = server_task_id'''
+        return JIMRequest(session_id=self.session_id, id=task_id)
+
 
 if __name__ == '__main__':
     session = JIMRequest()
