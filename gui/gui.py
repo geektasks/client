@@ -222,13 +222,13 @@ class MyWindow(QtWidgets.QMainWindow):
         def update_performers(body):
             for performer in body['performers']:
                 print('performer:', performer)
-                # dialog.listPeople.addItem(performer)
+                dialog.listPeople.addItem(performer)
 
         @QtCore.pyqtSlot(dict)################################
         def update_watchers(body):
             for watcher in body['watchers']:
                 print('watcher:', watcher)
-                # dialog.listPeople.addItem(watcher)
+                # dialog.listPeople.addItem(watcher)#чтобы не дублировать с исполнителями
 
         self.gotAllPerformers.connect(update_performers)################################
         self.gotAllWatchers.connect(update_watchers)################################
