@@ -52,7 +52,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.start_monitor()
 
         self.ui.action_login.triggered.connect(self.sign_in)
-        self.ui.action_exit.triggered.connect(self.exit)
+        # self.ui.action_exit.triggered.connect(self.exit)
 
         self.ui.taskList.doubleClicked.connect(self.task)
 
