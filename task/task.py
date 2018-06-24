@@ -18,8 +18,10 @@ class Task:
         self.viewer = viewer
         self._name = 'New task' if not name else name  # если задача с таким именем уже есть добавить суффикс _1(2, 3...)
         self._description = None
-        self._time = time.time()  # время создания
-        self._deadline_time = None  # срок исполнения
+        self._date_create = None  # дата создания
+        self._date_deadline = None  # срок (дата) исполнения
+        self._date_reminder = None  # дата напоминания
+        self._time_reminder = None  # время напоминания
         self._status = 0
         self._performers = [creator]  # список пользователей, которым задача сопоставленна
         self._watchers = [creator]  # список пользователе у которых есть доступ к задаче
@@ -31,8 +33,6 @@ status: {status} / description: {description}\n \
 performers: {performers} / access: {access}\n \
 comments: {comments}\n>>>>>'.format(name=self._name,
                                     creator=self._creator,
-                                    time=act_time(self._time),
-                                    deadline=self.deadline_time,
                                     status=self.status,
                                     description=self._description,
                                     performers=self._performers,
@@ -111,13 +111,13 @@ comments: {comments}\n>>>>>'.format(name=self._name,
             print('You have not access to edit status')
 
     @property
-    def deadline_time(self):
-        return self._deadline_time
+    def date_deadline(self):
+        return self._date_deadline
 
-    @deadline_time.setter
-    def deadline_time(self, value):
+    @date_deadline.setter
+    def date_deadline(self, value):
         if self.viewer in self._performers or self.viewer in self._watchers:
-            self._deadline_time = value
+            self._date_deadline = value
         else:
             print('You have not access to edit deadline')
 
@@ -207,4 +207,3 @@ comments: {comments}\n>>>>>'.format(name=self._name,
 if __name__ == '__main__':
     task = Task(creator='gkjf')
     print(task.task_dict)
-

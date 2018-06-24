@@ -1,40 +1,13 @@
 import sys
 import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
+from PyQt5.QtCore import QDate, QTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
 from time import sleep
 
 # from gui.monitor import Monitor
 from fat.handlers import handler
 import function.requests as request
-
-class CThread_monitor(QtCore.QThread):
-    def __init__ (self,output_queue,NAME):
-        super().__init__()
-        self.isRun = True
-        self.output_queue=output_queue
-        self.NAME=NAME
-    def run (self):
-        while self.isRun:
-            if not self.output_queue.empty:
-                data = self.output_queue.get(timeout=1000)
-                print('обрабатываем в гуи', data)
-                body = data['body']
-                try:
-                    if  data['head']['name'] in self.NAME:
-                        print(data['head']['name'])
-                        controller = self.NAME.get(data['head']['name'])
-                        print('сообщение для вывода в гуи', data)
-                        controller.emit(body)
-                    else:
-                        print(data['head']['name'])
-                        print('unknown_response')
-                except Exception as err:
-                    print(err)
-            else:
-                sleep(.300)
-
-
 
 
 class MyWindow(QtWidgets.QMainWindow):
@@ -47,6 +20,10 @@ class MyWindow(QtWidgets.QMainWindow):
     gotEditedTask = QtCore.pyqtSignal(dict)
     gotTaskId = QtCore.pyqtSignal(dict)
     gotSearchUser = QtCore.pyqtSignal(dict)
+    gotPerformer = QtCore.pyqtSignal(dict)  ################################
+    gotWatcher = QtCore.pyqtSignal(dict)  ################################
+    gotAllPerformers = QtCore.pyqtSignal(dict)  ################################
+    gotAllWatchers = QtCore.pyqtSignal(dict)  ################################
 
     def __init__(self, parent=None):
 
@@ -64,8 +41,13 @@ class MyWindow(QtWidgets.QMainWindow):
             'get all tasks': self.gotUpdateTaskList,
             'get task by id': self.gotTaskId,
             'edit task': self.gotEditedTask,
-            'search user': self.gotSearchUser}
-
+            'search user': self.gotSearchUser,
+            'assign performer': self.gotPerformer,  ################################
+            'grant access': self.gotWatcher,  ################################
+            'get all performers': self.gotAllPerformers,  ################################
+            'get all watchers': self.gotAllWatchers  ################################
+        }
+        self.runThread = True
         self.handler = handler
         self.start_handler()
         self.start_monitor()
@@ -81,10 +63,14 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotUpdateTaskList.connect(self.update_tasks_list)
         self.gotAutorization.connect(self.autorization_request)
         self.gotEditedTask.connect(self.edited_task_response)
-
+        self.gotPerformer.connect(self.added_performer)  ################################
+        self.gotWatcher.connect(self.added_watcher)  ################################
+        # self.gotAllPerformers.connect(self.update_performers)
+        # self.gotAllWatchers.connect(self.update_watchers)
 
     def start_monitor(self):
-        self.t1 = CThread_monitor(self.output_queue,self.NAME)
+        self.t1 = threading.Thread(target=self.monitor)
+        self.t1.daemon = True
         self.t1.start()
 
     def start_handler(self):
@@ -119,11 +105,25 @@ class MyWindow(QtWidgets.QMainWindow):
     ####################################################################################################################
     ########функция обработки сообщений от сервера################################################################
     ####################################################################################################################
-    #   def monitor(self,id,stop):
-    #
-    #    while True:
-    #       pass
-    # Функция монитор пернесена в класс.
+    def monitor(self):
+        while self.runThread:
+            data = False
+            if not self.output_queue.empty():
+                data = self.output_queue.get(timeout=0.2)
+            if data:
+                print('обрабатываем в гуи', data)
+                body = data['body']
+                try:
+                    if data['head']['name'] in self.NAME:
+                        print('будем обрабатывать', data['head']['name'])
+                        controller = self.NAME.get(data['head']['name'])
+                        print('сообщение для вывода в гуи', data)
+                        controller.emit(body)
+                    else:
+                        print(data['head']['name'])
+                        print('unknown_response')
+                except Exception as err:
+                    print(err)
 
     ####################################################################################################################
 
@@ -178,6 +178,16 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.cancel.clicked.connect(self.sign_in)
         dialog_reg.exec()
 
+    def exit(self):
+        print(0)
+        self.runThread = False
+        print(1)
+        self.t1.join()
+        print(2)
+        self.handler.stop()
+        print(3)
+        sys.exit(0)
+
     def sign_in(self):
 
         dialog = uic.loadUi('gui/templates/sign_in.ui')
@@ -196,33 +206,40 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.cancel.clicked.connect(sys.exit)
         dialog.exec()
 
-
-    def exit(self):
-        print('0')
-        self.handler.stop()
-        print('1')
-        self.t1.isRun=False
-        if (not self.t1.wait(5000)):  # Ждать завершения потока 5 секунд
-            self.t1.terminate()
-        print('2')
-
-        sys.exit(0)
-    def get_all_task(self):
-        message = request.get_all_tasks()
-        print('get all tasks from gui', message)
-        self.input_queue.put(message)
-
-
-
     def on_createTask_pressed(self):
         dialog = uic.loadUi('gui/templates/task_create.ui')
         dialog.topic.setFocus()
 
+        try:
+            current_date = QDate.currentDate()
+            dialog.dateEdit.setDate(current_date)
+            dialog.dateEdit_2.setDate(current_date)
+            dialog.dateEdit_3.setDate(current_date)
+            current_time = QTime.currentTime()
+            dialog.timeEdit.setTime(current_time)
+        except Exception as err:
+            print(err)
+
         def task_create():
+
             topic = dialog.topic.text()
             description = dialog.description.toPlainText()
-            message = request.create_task(name=topic, description=description)
-            self.input_queue.put(message)
+            try:
+                date_create = dialog.dateEdit.date().toString('dd.MM.yyyy')
+                date_deadline = dialog.dateEdit_2.date().toString('dd.MM.yyyy')
+                date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
+                time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
+            except Exception as err:
+                print('************')
+                print(err)
+            else:
+                message = request.create_task(name=topic, description=description,
+                                              date_create=date_create,
+                                              date_deadline=date_deadline,
+                                              date_reminder=date_reminder,
+                                              time_reminder=time_reminder)
+                print('new task create', message)
+                self.input_queue.put(message)
 
         dialog.addTask.clicked.connect(task_create)
         dialog.addTask.clicked.connect(dialog.accept)
@@ -230,12 +247,47 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def task(self):
         dialog = uic.loadUi('gui/templates/task_create.ui')
+
+        # try:
+        #     current_date = QDate.currentDate()
+        #     dialog.dateEdit.setDate(current_date)
+        #     dialog.dateEdit_2.setDate(current_date)
+        #     dialog.dateEdit_3.setDate(current_date)
+        #     current_time = QTime.currentTime()
+        #     dialog.timeEdit.setTime(current_time)
+        # except Exception as err:
+        #     print(err)
+
         task = self.ui.taskList.currentItem().text()
         task = task.split(' ', maxsplit=1)
         task_id = int(task[0])  # server_task_id
         task_name = task[1]
         message = request.get_task_by_id(task_id)
         self.input_queue.put(message)
+
+        message = request.get_all_performers(task_id=task_id)  ################################
+        self.input_queue.put(message)  ################################
+
+        message = request.get_all_watchers(task_id=task_id)  ################################
+        self.input_queue.put(message)  ################################
+
+        @QtCore.pyqtSlot(dict)  ################################
+        def update_performers(body):
+            dialog.listPeople.clear()
+            for performer in body['performers']:
+                print('performer:', performer)
+                dialog.listPeople.addItem(performer)
+
+        @QtCore.pyqtSlot(dict)  ################################
+        def update_watchers(body):
+            dialog.listPeople.clear()
+            for watcher in body['watchers']:
+                print('watcher:', watcher)
+                dialog.listPeople.addItem(watcher)  # чтобы не дублировать с исполнителями
+
+        self.gotAllPerformers.connect(update_performers)  ################################
+        self.gotAllWatchers.connect(update_watchers)  ################################
+
         dialog.topic.setText(task_name)
         dialog.addTask.setFocus()
 
@@ -253,6 +305,27 @@ class MyWindow(QtWidgets.QMainWindow):
         def get_task(body):
             dialog.description.setText(body['description'])
 
+            date_create = body.get('date_create')
+            date_deadline = body.get('date_deadline')
+            date_reminder = body.get('date_reminder')
+            time_reminder = body.get('time_reminder')
+
+            try:
+                date_create = QDate.fromString(date_create, 'dd.MM.yyyy')
+                date_deadline = QDate.fromString(date_deadline, 'dd.MM.yyyy')
+                date_reminder = QDate.fromString(date_reminder, 'dd.MM.yyyy')
+                time_reminder = QTime.fromString(time_reminder)
+
+                print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
+
+                dialog.dateEdit.setDate(date_create)
+                dialog.dateEdit_2.setDate(date_deadline)
+                dialog.dateEdit_3.setDate(date_reminder)
+                dialog.timeEdit.setTime(time_reminder)
+
+            except Exception as err:
+                print('****trying to set date from string', err)
+
         def add_people():
             dialog = uic.loadUi('gui/templates/users.ui')
 
@@ -268,8 +341,14 @@ class MyWindow(QtWidgets.QMainWindow):
                 for user in body['users']:
                     dialog.listUser.addItem(user)
 
-            def add():
+            def add():  ################################
+                # отправляем запросы одновременно на performer и watcher
+                # task_id = server_task_id
                 username = dialog.listUser.currentItem().text()
+                message = request.assign_performer(task_id=task_id, user=username)
+                self.input_queue.put(message)
+                message = request.grant_access(task_id=task_id, user=username)
+                self.input_queue.put(message)
                 dialog.close()
 
             self.gotSearchUser.connect(update_user)
@@ -286,13 +365,30 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.exec()
 
     def get_all_task(self):
+        self.ui.taskList.clear()
         message = request.get_all_tasks()
         print('get all tasks from gui', message)
         self.input_queue.put(message)
 
-        ###############################################################################################################
-        ############## функции обработки сообщений от сервера, запускаются по сигналу от функции обработчика###########
-        ###############################################################################################################
+    def get_all_performers(self):
+        print('отправляю запрос на всех исполнителей')
+        task = self.ui.taskList.currentItem().text()
+        task = task.split(' ', maxsplit=1)
+        task_id = int(task[0])  # server_task_id
+        message = request.get_all_performers(task_id=task_id)
+        self.input_queue.put(message)
+
+    def get_all_watchers(self):
+        print('отправляю запрос на всех наблюдателей')
+        task = self.ui.taskList.currentItem().text()
+        task = task.split(' ', maxsplit=1)
+        task_id = int(task[0])  # server_task_id
+        message = request.get_all_watchers(task_id=task_id)
+        self.input_queue.put(message)
+
+    ###############################################################################################################
+    ############## функции обработки сообщений от сервера, запускаются по сигналу от функции обработчика###########
+    ###############################################################################################################
 
     @QtCore.pyqtSlot(dict)
     def update_console(self, body):
@@ -313,7 +409,6 @@ class MyWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def update_tasks_list(self, body):
-        self.ui.taskList.clear()
         for task_key, task_value in body['message'].items():
             self.ui.taskList.addItem('{} {}'.format(task_key, task_value))
 
@@ -333,3 +428,14 @@ class MyWindow(QtWidgets.QMainWindow):
             self.get_all_task()
             self.update_console(body)
 
+    @QtCore.pyqtSlot(dict)  ################################
+    def added_performer(self, body):
+        if body['code'] == 200:
+            self.get_all_performers()
+            self.update_console(body)
+
+    @QtCore.pyqtSlot(dict)  ################################
+    def added_watcher(self, body):
+        if body['code'] == 200:
+            self.get_all_watchers()
+            self.update_console(body)
