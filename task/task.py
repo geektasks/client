@@ -20,8 +20,8 @@ class Task:
         self._description = None
         self._date_create = None  # дата создания
         self._date_deadline = None  # срок (дата) исполнения
-        self._date_remind = None  # дата напоминания
-        self._time_remind = None  # время напоминания
+        self._date_reminder = None  # дата напоминания
+        self._time_reminder = None  # время напоминания
         self._status = 0
         self._performers = [creator]  # список пользователей, которым задача сопоставленна
         self._watchers = [creator]  # список пользователе у которых есть доступ к задаче
