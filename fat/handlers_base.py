@@ -449,4 +449,4 @@ class FatThing(asyncio.Protocol):
         :return: None
         """
         self._loop.call_soon(self._stop)
-        self._thread.join()
+        # self._thread.join()
