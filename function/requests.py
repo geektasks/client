@@ -41,13 +41,19 @@ def presence(name):
     return message
 
 
-def create_task(name, description):
+def create_task(name, description, date_create=None,
+                date_deadline=None,
+                date_reminder=None,
+                time_reminder=None):
     print('session_id->', handlers.handler.data['session_id'])
     try:
         session.session_id = int(handlers.handler.data['session_id'])
     except Exception as err:
         print('error->', err)
-    message = session.create_task(name=name, description=description).jim_dict
+    message = session.create_task(name=name, description=description, date_create=date_create,
+                                  date_deadline=date_deadline,
+                                  date_reminder=date_reminder,
+                                  time_reminder=time_reminder).jim_dict
     return message
 
 

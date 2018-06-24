@@ -13,6 +13,10 @@ class JIMRequest:
     status = FieldType('status', 0, int)
     text = FieldType('text', '', str)
     time = FieldType('time', '', str, 25)
+    date_create = FieldType('date_create', '', str, 25)
+    date_deadline = FieldType('date_deadline', '', str, 25)
+    date_reminder = FieldType('date_reminder', '', str, 25)
+    time_reminder = FieldType('time_reminder', '', str, 25)
 
     __slots__ = {'head', session_id.name,
                  name.name,
@@ -23,7 +27,11 @@ class JIMRequest:
                  user.name,
                  status.name,
                  text.name,
-                 time.name}
+                 time.name,
+                 date_create.name,
+                 date_deadline.name,
+                 date_reminder.name,
+                 time_reminder.name}
 
     def __init__(self, session_id=0, **kwargs):
         self.session_id = session_id
@@ -68,8 +76,14 @@ class JIMRequest:
     def presence(self, username):
         return JIMRequest(session_id=self.session_id, name=username)
 
-    def create_task(self, name, description):
-        return JIMRequest(session_id=self.session_id, name=name, description=description)
+    def create_task(self, name, description, date_create=None,
+                    date_deadline=None,
+                    date_reminder=None,
+                    time_reminder=None):
+        return JIMRequest(session_id=self.session_id, name=name, description=description, date_create=date_create,
+                          date_deadline=date_deadline,
+                          date_reminder=date_reminder,
+                          time_reminder=time_reminder)
 
     def edit_task(self, task_id, name=None, description=None):
         '''task_id == server_task_id'''
@@ -150,14 +164,15 @@ if __name__ == '__main__':
     presence = session.presence('Jack').jim_dict
     print('presence', presence)
 
-    create_task = session.create_task(name='New', description='new description').jim_dict
+    create_task = session.create_task(name='New', description='new description', date_create='date', date_deadline=
+                                      'date', date_reminder='date', time_reminder='time').jim_dict
     print('create', create_task)
 
     print('-' * 50)
     # session.session_id = 0
 
     print('get task')
-    get_task = session.get_all_task().jim_dict
+    get_task = session.get_all_tasks().jim_dict
     print(get_task)
 
     edit_name = session.edit_task(task_id=1, name='Edit name').jim_dict
