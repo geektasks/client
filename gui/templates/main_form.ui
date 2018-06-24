@@ -71,6 +71,8 @@
      <string>Файл</string>
     </property>
     <addaction name="action_login"/>
+    <addaction name="separator"/>
+    <addaction name="action_exit"/>
    </widget>
    <addaction name="menu"/>
   </widget>
@@ -78,6 +80,11 @@
   <action name="action_login">
    <property name="text">
     <string>Вход</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string>Выход</string>
    </property>
   </action>
  </widget>

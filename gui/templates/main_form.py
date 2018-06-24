@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main.ui'
+# Form implementation generated from reading ui file 'main_form.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -47,7 +47,11 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.action_login = QtWidgets.QAction(MainWindow)
         self.action_login.setObjectName("action_login")
+        self.action_exit = QtWidgets.QAction(MainWindow)
+        self.action_exit.setObjectName("action_exit")
         self.menu.addAction(self.action_login)
+        self.menu.addSeparator()
+        self.menu.addAction(self.action_exit)
         self.menubar.addAction(self.menu.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -60,4 +64,5 @@ class Ui_MainWindow(object):
         self.createTask.setText(_translate("MainWindow", "Create Task"))
         self.menu.setTitle(_translate("MainWindow", "Файл"))
         self.action_login.setText(_translate("MainWindow", "Вход"))
+        self.action_exit.setText(_translate("MainWindow", "Выход"))
 

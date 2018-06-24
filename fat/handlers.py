@@ -1,6 +1,7 @@
 import fat.handlers_base as handlers_base
 from db.client_db import ClientDB
 from task.task import Task
+from fat.config import connect_address
 
 """
 Инструкция по созданию функций-обработчиков сообщений
@@ -85,14 +86,11 @@ D. Функция, вызываемая в случае отключенного
 * декорируемые функции могут иметь одинаковые названия
 """
 
-handler = handlers_base.FatThing("127.0.0.1", 8000)
+
+#Адресс серевера содержиться в файле  fat.config.py
+handler = connect_address()
 
 
-# handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
-# handler = handlers_base.FatThing("185.189.12.43", 8000)
-
-
-# handler = handlers_base.FatThing("127.0.0.1", 8888)
 
 
 @handler.init_func
