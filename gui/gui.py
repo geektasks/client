@@ -1,6 +1,7 @@
 import sys
 import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
+from PyQt5.QtCore import QDate, QTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
 from time import sleep
 
@@ -206,6 +207,19 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def task(self):
         dialog = uic.loadUi('gui/templates/task_create.ui')
+
+        try:
+            print('****')
+            current_date = QDate.currentDate()
+            dialog.dateEdit.setDate(current_date)
+            dialog.dateEdit_2.setDate(current_date)
+            dialog.dateEdit_3.setDate(current_date)
+            current_time = QTime.currentTime()
+            dialog.timeEdit.setTime(current_time)
+            print('*******')
+        except Exception as err:
+            print(err)
+
         task = self.ui.taskList.currentItem().text()
         task = task.split(' ', maxsplit=1)
         task_id = int(task[0])  # server_task_id
