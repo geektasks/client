@@ -47,7 +47,7 @@ class MyWindow(QtWidgets.QMainWindow):
             'get all performers': self.gotAllPerformers,  ################################
             'get all watchers': self.gotAllWatchers  ################################
         }
-        self.runThread=True
+        self.runThread = True
         self.handler = handler
         self.start_handler()
         self.start_monitor()
@@ -67,7 +67,6 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotWatcher.connect(self.added_watcher)  ################################
         # self.gotAllPerformers.connect(self.update_performers)
         # self.gotAllWatchers.connect(self.update_watchers)
-
 
     def start_monitor(self):
         self.t1 = threading.Thread(target=self.monitor)
@@ -178,15 +177,17 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.cancel.clicked.connect(dialog_reg.close)
         dialog_reg.cancel.clicked.connect(self.sign_in)
         dialog_reg.exec()
+
     def exit(self):
         print(0)
-        self.runThread=False
+        self.runThread = False
         print(1)
         self.t1.join()
         print(2)
         self.handler.stop()
         print(3)
         sys.exit(0)
+
     def sign_in(self):
 
         dialog = uic.loadUi('gui/templates/sign_in.ui')
@@ -209,19 +210,6 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog = uic.loadUi('gui/templates/task_create.ui')
         dialog.topic.setFocus()
 
-        def task_create():
-            topic = dialog.topic.text()
-            description = dialog.description.toPlainText()
-            message = request.create_task(name=topic, description=description)
-            self.input_queue.put(message)
-
-        dialog.addTask.clicked.connect(task_create)
-        dialog.addTask.clicked.connect(dialog.accept)
-        dialog.exec()
-
-    def task(self):
-        dialog = uic.loadUi('gui/templates/task_create.ui')
-
         try:
             current_date = QDate.currentDate()
             dialog.dateEdit.setDate(current_date)
@@ -231,6 +219,44 @@ class MyWindow(QtWidgets.QMainWindow):
             dialog.timeEdit.setTime(current_time)
         except Exception as err:
             print(err)
+
+        def task_create():
+
+            topic = dialog.topic.text()
+            description = dialog.description.toPlainText()
+            try:
+                date_create = dialog.dateEdit.date().toString('dd.MM.yyyy')
+                date_deadline = dialog.dateEdit_2.date().toString('dd.MM.yyyy')
+                date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
+                time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
+            except Exception as err:
+                print('************')
+                print(err)
+            else:
+                message = request.create_task(name=topic, description=description,
+                                              date_create=date_create,
+                                              date_deadline=date_deadline,
+                                              date_reminder=date_reminder,
+                                              time_reminder=time_reminder)
+                print('new task create', message)
+                self.input_queue.put(message)
+
+        dialog.addTask.clicked.connect(task_create)
+        dialog.addTask.clicked.connect(dialog.accept)
+        dialog.exec()
+
+    def task(self):
+        dialog = uic.loadUi('gui/templates/task_create.ui')
+
+        # try:
+        #     current_date = QDate.currentDate()
+        #     dialog.dateEdit.setDate(current_date)
+        #     dialog.dateEdit_2.setDate(current_date)
+        #     dialog.dateEdit_3.setDate(current_date)
+        #     current_time = QTime.currentTime()
+        #     dialog.timeEdit.setTime(current_time)
+        # except Exception as err:
+        #     print(err)
 
         task = self.ui.taskList.currentItem().text()
         task = task.split(' ', maxsplit=1)
@@ -330,7 +356,6 @@ class MyWindow(QtWidgets.QMainWindow):
         task_id = int(task[0])  # server_task_id
         message = request.get_all_performers(task_id=task_id)
         self.input_queue.put(message)
-
 
     def get_all_watchers(self):
         print('отправляю запрос на всех наблюдателей')
