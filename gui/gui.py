@@ -305,6 +305,29 @@ class MyWindow(QtWidgets.QMainWindow):
         def get_task(body):
             dialog.description.setText(body['description'])
 
+            print('=' * 25)
+            date_create = body.get('date_create')
+            date_deadline = body.get('date_deadline')
+            date_reminder = body.get('date_reminder')
+            time_reminder = body.get('time_reminder')
+            print('=' * 25)
+
+            try:
+                date_create = QDate.fromString(date_create)
+                date_deadline = QDate.fromString(date_deadline)
+                date_reminder = QDate.fromString(date_reminder)
+                time_reminder = QTime.fromString(time_reminder)
+
+                print('++++++++++++',date_create, date_deadline, date_reminder, time_reminder)
+
+                dialog.dateEdit.setDate(date_create)
+                dialog.dateEdit_2.setDate(date_deadline)
+                dialog.dateEdit_3.setDate(date_reminder)
+                dialog.timeEdit.setTime(time_reminder)
+
+            except Exception as err:
+                print('****trying to set date from string', err)
+
         def add_people():
             dialog = uic.loadUi('gui/templates/users.ui')
 
