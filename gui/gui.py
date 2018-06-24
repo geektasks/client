@@ -209,14 +209,12 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog = uic.loadUi('gui/templates/task_create.ui')
 
         try:
-            print('****')
             current_date = QDate.currentDate()
             dialog.dateEdit.setDate(current_date)
             dialog.dateEdit_2.setDate(current_date)
             dialog.dateEdit_3.setDate(current_date)
             current_time = QTime.currentTime()
             dialog.timeEdit.setTime(current_time)
-            print('*******')
         except Exception as err:
             print(err)
 
