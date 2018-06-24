@@ -1,5 +1,5 @@
 import logging
-import time, sys
+from time import sleep
 import socket
 import threading, queue
 import hashlib
@@ -8,6 +8,7 @@ from jim.convert import json_to_bytes, bytes_to_json
 
 logger = logging.getLogger('root')
 send_queue = queue.Queue()
+
 
 
 class Client():
@@ -19,6 +20,7 @@ class Client():
         self.lock = threading.Lock()
         self.recv_queue = queue.Queue()
         self.send_queue = send_queue
+        self.thereadRun=True
 
     @property
     def username(self):
@@ -33,8 +35,10 @@ class Client():
         return self._sock
 
     def _send_message(self):
-        while 1:
-            data = self.send_queue.get()
+        while self.thereadRun:
+            data=False
+            if not self.send_queue.empty():
+                data = self.send_queue.get(timeout=0.2)
             if data:
                 msg = json_to_bytes(data)
                 self.socket.send(msg)
@@ -47,24 +51,27 @@ class Client():
 
         sock = self.socket
         cont_l = []
-        while True:
+        while self.thereadRun:
             try:
-                sock.settimeout(12)
-                data_recv = sock.recv(1024)
-                data_recv = bytes_to_json(data_recv)
-                print('received: ', data_recv)  ###########
-                self.recv_queue.put(data_recv)
-
+                if not self.recv_queue.full():
+                    sock.settimeout(12)
+                    data_recv = sock.recv(1400)
+                    data_recv = bytes_to_json(data_recv)
+                    print('received: ', data_recv)  ###########
+                    self.recv_queue.put(data_recv)
+                else:
+                    print('Очердь полна, спим')
+                    sleep(0.5)
             except socket.timeout:
                 pass
 
     def start_thread(self):
-        t1 = threading.Thread(target=self._send_message)
-        t2 = threading.Thread(target=self._get_message)
-        t1.daemon = True
-        t2.daemon = True
-        t1.start()
-        t2.start()
+        self.t1 = threading.Thread(target=self._send_message)
+        self.t2 = threading.Thread(target=self._get_message)
+        self.t1.daemon = True
+        self.t2.daemon = True
+        self.t1.start()
+        self.t2.start()
 
     def run(self):
         try:
@@ -74,6 +81,14 @@ class Client():
             self.start_thread()
         except:
             return 'Сервер не отвечает'
+    def stop(self):
+        self.thereadRun=False
+        print('s0')
+        self.t1.join()
+        print('s1')
+        self.t2.join()
+        print('s3')
+        return 0
 
 
 if __name__ == '__main__':

@@ -46,13 +46,13 @@ class MyWindow(QtWidgets.QMainWindow):
             'get all performers': self.gotAllPerformers,  ################################
             'get all watchers': self.gotAllWatchers  ################################
         }
-
+        self.runThread=True
         self.handler = handler
         self.start_handler()
         self.start_monitor()
 
         self.ui.action_login.triggered.connect(self.sign_in)
-        # self.ui.action_exit.triggered.connect(self.exit)
+        self.ui.action_exit.triggered.connect(self.exit)
 
         self.ui.taskList.doubleClicked.connect(self.task)
 
@@ -69,9 +69,9 @@ class MyWindow(QtWidgets.QMainWindow):
 
 
     def start_monitor(self):
-        t1 = threading.Thread(target=self.monitor)
-        t1.daemon = True
-        t1.start()
+        self.t1 = threading.Thread(target=self.monitor)
+        self.t1.daemon = True
+        self.t1.start()
 
     def start_handler(self):
         self.handler.run()
@@ -106,21 +106,24 @@ class MyWindow(QtWidgets.QMainWindow):
     ########функция обработки сообщений от сервера################################################################
     ####################################################################################################################
     def monitor(self):
-        while 1:
-            data = self.output_queue.get()
-            print('обрабатываем в гуи', data)
-            body = data['body']
-            try:
-                if data['head']['name'] in self.NAME:
-                    print('будем обрабатывать', data['head']['name'])
-                    controller = self.NAME.get(data['head']['name'])
-                    print('сообщение для вывода в гуи', data)
-                    controller.emit(body)
-                else:
-                    print(data['head']['name'])
-                    print('unknown_response')
-            except Exception as err:
-                print(err)
+        while self.runThread:
+            data = False
+            if not self.output_queue.empty():
+                data = self.output_queue.get(timeout=0.2)
+            if data:
+                print('обрабатываем в гуи', data)
+                body = data['body']
+                try:
+                    if data['head']['name'] in self.NAME:
+                        print('будем обрабатывать', data['head']['name'])
+                        controller = self.NAME.get(data['head']['name'])
+                        print('сообщение для вывода в гуи', data)
+                        controller.emit(body)
+                    else:
+                        print(data['head']['name'])
+                        print('unknown_response')
+                except Exception as err:
+                    print(err)
 
     ####################################################################################################################
 
@@ -174,7 +177,15 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.cancel.clicked.connect(dialog_reg.close)
         dialog_reg.cancel.clicked.connect(self.sign_in)
         dialog_reg.exec()
-
+    def exit(self):
+        print(0)
+        self.runThread=False
+        print(1)
+        self.t1.join()
+        print(2)
+        self.handler.stop()
+        print(3)
+        sys.exit(0)
     def sign_in(self):
 
         dialog = uic.loadUi('gui/templates/sign_in.ui')
