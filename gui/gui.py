@@ -265,6 +265,33 @@ class MyWindow(QtWidgets.QMainWindow):
         message = request.get_task_by_id(task_id)
         self.input_queue.put(message)
 
+        @QtCore.pyqtSlot(dict)
+        def get_task(body):
+            dialog.description.setText(body['description'])
+
+            date_create = body.get('date_create')
+            date_deadline = body.get('date_deadline')
+            date_reminder = body.get('date_reminder')
+            time_reminder = body.get('time_reminder')
+
+            try:
+                date_create = QDate.fromString(date_create, 'dd.MM.yyyy')
+                date_deadline = QDate.fromString(date_deadline, 'dd.MM.yyyy')
+                date_reminder = QDate.fromString(date_reminder, 'dd.MM.yyyy')
+                time_reminder = QTime.fromString(time_reminder)
+
+                print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
+
+                dialog.dateEdit.setDate(date_create)
+                dialog.dateEdit_2.setDate(date_deadline)
+                dialog.dateEdit_3.setDate(date_reminder)
+                dialog.timeEdit.setTime(time_reminder)
+
+            except Exception as err:
+                print('****trying to set date from string', err)
+
+        self.gotTaskId.connect(get_task)
+
         message = request.get_all_performers(task_id=task_id)  ################################
         self.input_queue.put(message)  ################################
 
@@ -301,30 +328,32 @@ class MyWindow(QtWidgets.QMainWindow):
                 message = request.edit_task(task_id=task_id, description=description)
                 self.input_queue.put(message)
 
-        @QtCore.pyqtSlot(dict)
-        def get_task(body):
-            dialog.description.setText(body['description'])
-
-            date_create = body.get('date_create')
-            date_deadline = body.get('date_deadline')
-            date_reminder = body.get('date_reminder')
-            time_reminder = body.get('time_reminder')
-
-            try:
-                date_create = QDate.fromString(date_create, 'dd.MM.yyyy')
-                date_deadline = QDate.fromString(date_deadline, 'dd.MM.yyyy')
-                date_reminder = QDate.fromString(date_reminder, 'dd.MM.yyyy')
-                time_reminder = QTime.fromString(time_reminder)
-
-                print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
-
-                dialog.dateEdit.setDate(date_create)
-                dialog.dateEdit_2.setDate(date_deadline)
-                dialog.dateEdit_3.setDate(date_reminder)
-                dialog.timeEdit.setTime(time_reminder)
-
-            except Exception as err:
-                print('****trying to set date from string', err)
+        # @QtCore.pyqtSlot(dict)
+        # def get_task(body):
+        #     dialog.description.setText(body['description'])
+        #
+        #     date_create = body.get('date_create')
+        #     date_deadline = body.get('date_deadline')
+        #     date_reminder = body.get('date_reminder')
+        #     time_reminder = body.get('time_reminder')
+        #
+        #     try:
+        #         date_create = QDate.fromString(date_create, 'dd.MM.yyyy')
+        #         date_deadline = QDate.fromString(date_deadline, 'dd.MM.yyyy')
+        #         date_reminder = QDate.fromString(date_reminder, 'dd.MM.yyyy')
+        #         time_reminder = QTime.fromString(time_reminder)
+        #
+        #         print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
+        #
+        #         dialog.dateEdit.setDate(date_create)
+        #         dialog.dateEdit_2.setDate(date_deadline)
+        #         dialog.dateEdit_3.setDate(date_reminder)
+        #         dialog.timeEdit.setTime(time_reminder)
+        #
+        #     except Exception as err:
+        #         print('****trying to set date from string', err)
+        #
+        # self.gotTaskId.connect(get_task)
 
         def add_people():
             dialog = uic.loadUi('gui/templates/users.ui')
@@ -357,11 +386,45 @@ class MyWindow(QtWidgets.QMainWindow):
             dialog.userName.textChanged.connect(search_user)
             dialog.exec()
 
-        self.gotTaskId.connect(get_task)
+        def time_mgm():
+            dialog = uic.loadUi('gui/templates/TimeMgm_form.ui')
+            try:
+                dialog.NameOfTask.setText(task_name)
+                dialog.NameOfTask.setAlignment(QtCore.Qt.AlignCenter)
+            except Exception as err:
+                print(err)
+
+            def get_work():
+                interval_of_work = dialog.interval_of_work.value()
+                print('interval_of_work', interval_of_work, 'minutes')
+
+            def get_relax():
+                interval_of_relax = dialog.interval_of_relax.value()
+                print('interval_of_relax', interval_of_relax, 'minutes')
+
+            def sum_work():
+                summary_of_work = dialog.SummaryOfWork.value()
+                print('summary of work', summary_of_work, 'hours')
+                sum_relax()
+
+            def sum_relax():
+                summary_of_work = dialog.SummaryOfWork.value()
+                interval_of_work = dialog.interval_of_work.value()
+                interval_of_relax = dialog.interval_of_relax.value()
+                period = (summary_of_work * 60) / (interval_of_work + interval_of_relax)
+                dialog.SummaryOfRelax.setText(str(round((interval_of_relax * period) / 60, 1)))
+
+            dialog.interval_of_work.valueChanged.connect(get_work)
+            dialog.interval_of_relax.valueChanged.connect(get_relax)
+            dialog.SummaryOfWork.valueChanged.connect(sum_work)
+            dialog.exec()
+
+        # self.gotTaskId.connect(get_task)
         dialog.addPeople.clicked.connect(add_people)
         dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.cancel.clicked.connect(dialog.close)
+        dialog.TimeMGM.clicked.connect(time_mgm)
         dialog.exec()
 
     def get_all_task(self):
