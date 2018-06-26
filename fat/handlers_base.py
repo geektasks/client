@@ -2,7 +2,7 @@ import asyncio
 import queue
 import json
 import threading
-# import db.client_db as client_db
+import time
 import concurrent.futures
 
 
@@ -15,6 +15,8 @@ class FatThing(asyncio.Protocol):
     INIT_FUNC = lambda *args, **kwargs: None
     STOP_FUNC = lambda *args, **kwargs: None
     CONNECTION_REFUSED = lambda *args, **kwargs: None
+    PERIODIC_FUNC = []
+    CALLS = []
 
     def __init__(self, host, port):
         self.input_queue = queue.Queue()
@@ -135,6 +137,10 @@ class FatThing(asyncio.Protocol):
         """
         self.STOP_FUNC()
         self.input_queue.put(None)
+        for func in self.PERIODIC_FUNC:
+            func.cancel()
+        for func in self.CALLS:
+            func.cancel()
         self._loop.stop()
 
     def connection_made(self, transport):
@@ -186,6 +192,9 @@ class FatThing(asyncio.Protocol):
             func.__globals__["block_queue"] = handler._lock_queue_handle
             func.__globals__["release_queue"] = handler._release_queue_handle
             func.__globals__["data"] = handler.data
+            func.__globals__["call_later"] = handler._call_later
+            func.__globals__["call_at"] = handler._call_at
+
             handler.SOCKET_HANDLERS[type] = handler.SOCKET_HANDLERS.get(type, {})
             handler.SOCKET_HANDLERS[type][name] = func
             print("Function \"{}\" assigned as handler messages type \"{}\" with name \"{}\".".format(func.__name__, type, name))
@@ -204,6 +213,9 @@ class FatThing(asyncio.Protocol):
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
+        func.__globals__["call_later"] = self._call_later
+        func.__globals__["call_at"] = self._call_at
+
         self.DEFAULT_SOCKET_HANDLER = func
         print("function \"{}\" assigned as socket handler default.".format(func.__name__))
         return func
@@ -228,6 +240,9 @@ class FatThing(asyncio.Protocol):
             func.__globals__["block_queue"] = handler._lock_queue_handle
             func.__globals__["release_queue"] = handler._release_queue_handle
             func.__globals__["data"] = handler.data
+            func.__globals__["call_later"] = handler._call_later
+            func.__globals__["call_at"] = handler._call_at
+
             handler.QUEUE_HANDLERS[type] = handler.QUEUE_HANDLERS.get(type, {})
             handler.QUEUE_HANDLERS[type][name] = func
             print("Function \"{}\" assigned as handler messages type \"{}\" with name \"{}\".".format(func.__name__, type, name))
@@ -246,6 +261,9 @@ class FatThing(asyncio.Protocol):
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
+        func.__globals__["call_later"] = self._call_later
+        func.__globals__["call_at"] = self._call_at
+
         self.DEFAULT_QUEUE_HANDLER = func
         print("Function \"{}\" assigned as queue handler default.".format(func.__name__))
         return func
@@ -261,6 +279,9 @@ class FatThing(asyncio.Protocol):
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
+        func.__globals__["call_later"] = self._call_later
+        func.__globals__["call_at"] = self._call_at
+
         self.INIT_FUNC = func
         print("Function \"{}\" assigned as init func.".format(func.__name__))
         return func
@@ -276,6 +297,9 @@ class FatThing(asyncio.Protocol):
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
+        func.__globals__["call_later"] = self._call_later
+        func.__globals__["call_at"] = self._call_at
+
         self.STOP_FUNC = func
         print("Function \"{}\" assigned as stop func.".format(func.__name__))
         return func
@@ -291,9 +315,123 @@ class FatThing(asyncio.Protocol):
         func.__globals__["block_queue"] = self._lock_queue_handle
         func.__globals__["release_queue"] = self._release_queue_handle
         func.__globals__["data"] = self.data
+        func.__globals__["call_later"] = self._call_later
+        func.__globals__["call_at"] = self._call_at
+
         self.CONNECTION_REFUSED = func
         print("Function \"{}\" assigned as connection refused func.".format(func.__name__))
         return func
+
+    def periodic_func(self, period_time, with_start=True):
+        """
+        Назначить перидическую функцию
+        :param period_time: период вызова функции
+        :param with_start: первый вызов произойдет при старте
+        :return: назначающая функция
+        """
+        handler = self
+
+        def assignator(func):
+            """
+            Назначающая функция
+            :param func: назначаемая функция
+            :return: назначаемая функция
+            """
+            func.__globals__["send_message"] = handler._send_message
+            func.__globals__["put_message"] = handler.output_queue.put
+            func.__globals__["block_queue"] = handler._lock_queue_handle
+            func.__globals__["release_queue"] = handler._release_queue_handle
+            func.__globals__["data"] = handler.data
+            func.__globals__["call_later"] = handler._call_later
+            func.__globals__["call_at"] = handler._call_at
+
+            async def periodic_func():
+
+                if with_start:
+                    func()
+
+                while True:
+                    await asyncio.sleep(period_time)
+                    func()
+
+            handler.PERIODIC_FUNC.append(handler._loop.create_task(periodic_func()))
+
+            print("Function \"{}\" assigned as periodic one with {} sec. period.".format(func.__name__, period_time))
+
+            return func
+
+        return assignator
+
+    def _call_later(self, delay_time, *args, data_name=None):
+        """
+        Назначить функцию, вызываемую через промежуток времени
+        :param delay_time: промежуток времени (в секундах)
+        :return: назначающая функция
+        """
+        handler = self
+
+        def assignator(func):
+            """
+            Назначающая функция
+            :param func: назначаемая функция
+            :return: назначаемая функция
+            """
+            func.__globals__["send_message"] = handler._send_message
+            func.__globals__["put_message"] = handler.output_queue.put
+            func.__globals__["block_queue"] = handler._lock_queue_handle
+            func.__globals__["release_queue"] = handler._release_queue_handle
+            func.__globals__["data"] = handler.data
+            func.__globals__["call_later"] = handler._call_later
+            func.__globals__["call_at"] = handler._call_at
+
+            handler.CALLS.append(handler._loop.call_later(delay_time, func, *args))
+
+            print("Function \"{}\" will call after {} sec.".format(func.__name__, delay_time))
+
+            if data_name is not None:
+                handler.data[data_name] = func_call
+                print("Function \"{}\" put in data as \"{}\", so you can cancel call.".format(func.__name__, data_name))
+
+            return func
+
+        return assignator
+
+    def _call_at(self, call_time, *args, data_name=None):
+        """
+        Назначить функцию, вызываемую в определенный момент времени
+        :param delay_time: момент времени (в секундах(
+        :return: назначающая функция
+        """
+
+        handler = self
+        loop_time = call_time - time.time() + self._loop.time()
+
+        def assignator(func):
+            """
+            Назначающая функция
+            :param func: назначаемая функция
+            :return: назначаемая функция
+            """
+            func.__globals__["send_message"] = handler._send_message
+            func.__globals__["put_message"] = handler.output_queue.put
+            func.__globals__["block_queue"] = handler._lock_queue_handle
+            func.__globals__["release_queue"] = handler._release_queue_handle
+            func.__globals__["data"] = handler.data
+            func.__globals__["call_later"] = handler._call_later
+            func.__globals__["call_at"] = handler._call_at
+
+            func_call = handler._loop.call_at(loop_time, func, *args)
+            handler.CALLS.append(func_call)
+
+            print("Function \"{}\" will call at ".format(func.__name__) + time.strftime("%d.%m.%Y %H:%M:%S"))
+
+            if data_name is not None:
+                handler.data[data_name] = func_call
+                print("Function \"{}\" put in data as \"{}\", so you can cancel call.".format(func.__name__, data_name))
+
+            return func
+
+        return assignator
 
     def run(self):
         """
@@ -311,4 +449,4 @@ class FatThing(asyncio.Protocol):
         :return: None
         """
         self._loop.call_soon(self._stop)
-        self._thread.join()
+        # self._thread.join()

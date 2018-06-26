@@ -71,6 +71,8 @@ class ClientDB:
                           server_task_id INTEGER,
                           task_name TEXT,
                           task_description TEXT,
+                          date_reminder TEXT,
+                          time_reminder TEXT,
                           status_id INTEGER,
                           user_id INTEGER,
                           FOREIGN KEY (status_id) REFERENCES statuses(id),
@@ -210,9 +212,11 @@ class ClientDB:
             task["name"],
             task["description"],
             status_id,
-            user_id
+            user_id,
+            task['date_reminder'],
+            task['time_reminder']
         ]
-        self.cursor.execute("""INSERT INTO tasks (server_task_id, task_name, task_description, status_id, user_id) VALUES (?, ?, ?, ?, ?)""", values)
+        self.cursor.execute("""INSERT INTO tasks (server_task_id, task_name, task_description, status_id, user_id, date_reminder, time_reminder) VALUES (?, ?, ?, ?, ?, ?, ?)""", values)
         task_id = self.cursor.lastrowid
         if "watchers" in task:
             for watcher in task["watchers"]:
@@ -368,6 +372,14 @@ class ClientDB:
     #####################
     # Работа с задачами #
     #####################
+    def get_all_tasks(self):
+        date = {}
+        self.cursor.execute('''SELECT tasks.server_task_id, tasks.date_reminder, tasks.time_reminder FROM tasks''')
+        task= self.cursor.fetchall()
+        print(task)
+        for i in task:
+            date[i[0]] = (i[1],i[2])
+        return date
 
     def get_tasks(self):
         """

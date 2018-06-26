@@ -2,6 +2,9 @@ import fat.handlers_base as handlers_base
 from db.client_db import ClientDB
 from task.task import Task
 from fat.config import connect_address
+import threading
+import datetime
+import time
 
 """
 Инструкция по созданию функций-обработчиков сообщений
@@ -17,14 +20,14 @@ data — словарь для хранения чего угодно :)
 
 A. Обработчик сообщений из очередиs
 Вызывается при получении сообщения из очереди. 
-    
+
     А.1 Обработчик по умолчанию
         Обработчик по умолчанию получает на обработку все сообщения, которые не получили условные обработчики,
         сообщеине — объект, помещенный в очередь
-        
+
         Для назначения обработчика по умолчанию, установите перед функцией декоратор:
         декоратор — @handler.default_queue_handler
-        
+
     А.2 Условный обработчик
         Получает на обработку сообщения, имеющие указанный тип и имя (сообщение — словарь, имеющий (помимо возможных
         прочих) ключ "head", по которому находится другой словарь, имеющий (помимо возможных прочих) два ключа: "type"
@@ -37,22 +40,22 @@ A. Обработчик сообщений из очередиs
             },
             "another key": "some value"
         }
-        
+
         Для назначения условного обработчика, установите перед функцией декоратор:
         @handler.conditional_queue_handler(type, name),
         где type — тип сообщения
             name — имя сообщения
-        
+
 В. Обработчик сообщений с сервера
 Вызывается при получении сообщения от сервера.
 
     В.1 Обработчик по умолчанию
         Обработчик по умолчанию получает на обработку все сообщения, которые не получили условные обработчики,
         сообщеине — строка
-        
+
         Для назначения обработчика по умолчанию, установите перед функцией (принимает сообщение) декоратор:
         декоратор — @handler.default_socket_handler
-    
+
     В.2 Условный обработчик
         Получает на обработку сообщения, имеющие указанный тип и имя (сообщение — словарь, имеющий (помимо возможных
         прочих) ключ "head", по которому находится другой словарь, имеющий (помимо возможных прочих) два ключа: "type"
@@ -65,12 +68,12 @@ A. Обработчик сообщений из очередиs
             },
             "another key": "some value"
         }
-        
+
         Для назначения условного обработчика, установите перед функцией (принимает сообщение) декоратор:
         @handler.conditional_socket_handler(type, name),
         где type — тип сообщения
             name — имя сообщения
-            
+
 C. Инициализирующая функция
 Вызывается в начале работы обработчика
 
@@ -82,20 +85,12 @@ D. Функция, вызываемая в случае отключенного
 
 Для назначения инициализирующей функции, установите перед функцией (без аргументов) декоратор:
 @handler.connection_refused_func
-            
+
 * декорируемые функции могут иметь одинаковые названия
 """
 
-
-#Адресс серевера содержиться в файле  fat.config.py
+# Адресс серевера содержиться в файле  fat.config.py
 handler = connect_address()
-
-
-# handler = handlers_base.FatThing("ddimans.dyndns.org", 8000)
-# handler = handlers_base.FatThing("185.189.12.43", 8000)
-
-
-# handler = handlers_base.FatThing("127.0.0.1", 8888)
 
 
 @handler.init_func
@@ -174,6 +169,42 @@ def authorization(message):
     release_queue()
 
 
+def notification(date):
+    date_notification = '99.99.9999'
+    time_notification = '99:99:99'
+    now_date = datetime.datetime.strftime(datetime.datetime.now(), '%d.%m.%Y')
+    now_time = datetime.datetime.strftime(datetime.datetime.now(), '%H:%M:%S')
+    for id, t in date.items():
+        if t[0] and now_date <= t[0] < date_notification:
+            if t[1] and now_time < t[1] < time_notification:
+                date_notification = t[0]
+                time_notification = t[1]
+                server_id = id
+    if date_notification != '99.99.9999':
+        def timer(date_notification, time_notification, server_id):
+            date_r = date_notification + ' ' + time_notification
+            while datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S') > datetime.datetime.now():
+                time.sleep(10)
+            print(datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S'), 'Ураааааааааа')
+            message = {
+                "head": {
+                    "type": "server response",
+                    "name": "notification"
+                },
+                "body": {
+                    "code": '',
+                    "message": datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S'),
+                    'server_id': server_id
+                }
+            }
+            put_message(message)
+            release_queue()
+            notification(date)
+
+        timer = threading.Thread(target=timer, args=(date_notification, time_notification, server_id))
+        timer.start()
+
+
 @handler.conditional_queue_handler('action', 'create task')
 def create_task(message):
     print('create task ->', message)
@@ -189,15 +220,21 @@ def create_task(message):
         server_task_id = message['body'].get('id')
         task_name = data['create_task']['body'].get('name')
         task_description = data['create_task']['body'].get('description')
+        task_date_reminder = data['create_task']['body'].get('date_reminder')
+        task_time_reminder = data['create_task']['body'].get('time_reminder')
         data.pop('create_task')
 
         task = Task(creator=creator, viewer=creator, name=task_name)
+        task.date_reminder = task_date_reminder
+        task.time_reminder = task_time_reminder
         task.description = task_description
         task.id = int(server_task_id)
         task = task.task_dict
         print('task->', task)
 
         data['db'].add_task(task)
+
+
 
     else:
         print(message['body']['code'], message['body']['message'])
@@ -252,6 +289,8 @@ def get_all_tasks(message):
 def get_all_tasks(message):
     '''обновим в бд все server_task_id согласно полученному сообщению'''
     print('get all tasks->', message)
+    da = data['db'].get_all_tasks()
+    notification(da)
     put_message(message)
     if message['body']['code'] == 200:
         for server_task_id, task_name in message['body']['message'].items():
@@ -269,10 +308,12 @@ def get_all_tasks(message):
 
     release_queue()
 
+
 @handler.conditional_queue_handler('action', 'get task by id')
 def get_task_by_id(message):
     block_queue()
     send_message(message)
+
 
 @handler.conditional_socket_handler("server response", "get task by id")
 def get_task_by_id(message):
@@ -281,10 +322,12 @@ def get_task_by_id(message):
     put_message(message)
     release_queue()
 
+
 @handler.conditional_queue_handler('action', 'search user')
 def search_user(message):
     block_queue()
     send_message(message)
+
 
 @handler.conditional_socket_handler("server response", "search user")
 def search_user(message):
@@ -292,3 +335,78 @@ def search_user(message):
     print('search user->', message)
     put_message(message)
     release_queue()
+
+
+@handler.conditional_queue_handler('action', 'assign performer')
+def assign_performer(message):
+    print('assign->', message)
+    data['assign_performer'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'assign performer')
+def assign_performer(message):
+    if message['body']['code'] == 200:
+        task_id = int(data['assign_performer']['body']['id'])
+        username = data['assign_performer']['body']['user']
+        data['db'].add_performer(task_id=task_id, user_name=username)  # task_id локальный
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('assign_performer')
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'grant access')
+def grant_access(message):
+    print('grant access->', message)
+    data['grant_access'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'grant access')
+def grant_access(message):
+    if message['body']['code'] == 200:
+        task_id = int(data['grant_access']['body']['id'])
+        username = data['grant_access']['body']['user']
+        data['db'].add_watcher(task_id=task_id, user_name=username)  # task_id локальный
+    else:
+        print(message['body']['code'], message['body']['message'])
+
+    data.pop('grant_access')
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'get all performers')
+def get_all_performers(message):
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'get all performers')
+def get_all_performers(message):
+    print('get all performers->', message)
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'get all watchers')
+def get_all_watchers(message):
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'get all watchers')
+def get_all_watchers(message):
+    print('get all watchers->', message)
+    put_message(message)
+    release_queue()
+
+
+@handler.periodic_func(period_time=10, with_start=False)
+def periodic_test():
+    print('/' * 15, 'i am periodic function, la-la-laaa', '/' * 15)
+    print('/' * 12, 'running once per 10 seconds, tra-la-laaa', '/' * 12)

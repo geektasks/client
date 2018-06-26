@@ -43,6 +43,33 @@
          </item>
          <item>
           <widget class="QDateEdit" name="dateEdit">
+           <property name="maximumDateTime">
+            <datetime>
+             <hour>21</hour>
+             <minute>59</minute>
+             <second>59</second>
+             <year>3000</year>
+             <month>12</month>
+             <day>31</day>
+            </datetime>
+           </property>
+           <property name="minimumDate">
+            <date>
+             <year>2018</year>
+             <month>1</month>
+             <day>1</day>
+            </date>
+           </property>
+           <property name="maximumTime">
+            <time>
+             <hour>21</hour>
+             <minute>59</minute>
+             <second>59</second>
+            </time>
+           </property>
+           <property name="currentSection">
+            <enum>QDateTimeEdit::DaySection</enum>
+           </property>
            <property name="calendarPopup">
             <bool>true</bool>
            </property>
@@ -57,6 +84,26 @@
          </item>
          <item>
           <widget class="QDateEdit" name="dateEdit_2">
+           <property name="maximumDateTime">
+            <datetime>
+             <hour>23</hour>
+             <minute>59</minute>
+             <second>59</second>
+             <year>3000</year>
+             <month>12</month>
+             <day>31</day>
+            </datetime>
+           </property>
+           <property name="minimumDateTime">
+            <datetime>
+             <hour>0</hour>
+             <minute>0</minute>
+             <second>0</second>
+             <year>2018</year>
+             <month>1</month>
+             <day>1</day>
+            </datetime>
+           </property>
            <property name="calendarPopup">
             <bool>true</bool>
            </property>
@@ -78,7 +125,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
-          <widget class="QListView" name="listPeople"/>
+          <widget class="QListWidget" name="listPeople"/>
          </item>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout">
@@ -86,6 +133,13 @@
             <widget class="QPushButton" name="addPeople">
              <property name="text">
               <string>Add</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="TimeMGM">
+             <property name="text">
+              <string>TimeMgm</string>
              </property>
             </widget>
            </item>
@@ -126,6 +180,33 @@
        </item>
        <item>
         <widget class="QDateEdit" name="dateEdit_3">
+         <property name="dateTime">
+          <datetime>
+           <hour>0</hour>
+           <minute>0</minute>
+           <second>0</second>
+           <year>2018</year>
+           <month>9</month>
+           <day>14</day>
+          </datetime>
+         </property>
+         <property name="minimumDateTime">
+          <datetime>
+           <hour>0</hour>
+           <minute>0</minute>
+           <second>0</second>
+           <year>2018</year>
+           <month>1</month>
+           <day>1</day>
+          </datetime>
+         </property>
+         <property name="maximumDate">
+          <date>
+           <year>3000</year>
+           <month>12</month>
+           <day>31</day>
+          </date>
+         </property>
          <property name="calendarPopup">
           <bool>true</bool>
          </property>
