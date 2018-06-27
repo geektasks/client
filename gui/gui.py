@@ -249,9 +249,9 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
-    def task(self, task_id = None):
+    def task(self, task_id = None, server_task_id = None ):
         dialog = uic.loadUi('gui/templates/task_create.ui')
-
+        #print(task_id) # почему task_id объект qt класса ведь мы указали что task_id = None
         # try:
         #     current_date = QDate.currentDate()
         #     dialog.dateEdit.setDate(current_date)
@@ -262,12 +262,13 @@ class MyWindow(QtWidgets.QMainWindow):
         # except Exception as err:
         #     print(err)
         task_name = ''
-        if task_id == None:
+        if server_task_id == None:
             task = self.ui.taskList.currentItem().text()
             task = task.split(' ', maxsplit=1)
-            task_id = int(task[0])  # server_task_id
+            server_task_id = int(task[0])  # server_task_id
+            print(server_task_id)
             task_name = task[1]
-        message = request.get_task_by_id(task_id)
+        message = request.get_task_by_id(server_task_id)
         self.input_queue.put(message)
 
         @QtCore.pyqtSlot(dict)
@@ -297,10 +298,10 @@ class MyWindow(QtWidgets.QMainWindow):
 
         self.gotTaskId.connect(get_task)
 
-        message = request.get_all_performers(task_id=task_id)  ################################
+        message = request.get_all_performers(task_id=server_task_id)  ################################
         self.input_queue.put(message)  ################################
 
-        message = request.get_all_watchers(task_id=task_id)  ################################
+        message = request.get_all_watchers(task_id=server_task_id)  ################################
         self.input_queue.put(message)  ################################
 
         @QtCore.pyqtSlot(dict)  ################################
@@ -510,7 +511,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def notification(self, body):
-        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']), lambda: self.task(task_id= body['server_id']))
+        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']), lambda: self.task(server_task_id= body['server_id']))
         window.show()
         window.move2RightBottomCorner()
 
