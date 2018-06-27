@@ -473,7 +473,7 @@ class MyWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(dict)
     def update_tasks_list(self, body):
         for task_key, task_value in body['message'].items():
-            self.ui.taskList.addItem('{} {}'.format(task_key, task_value))
+            self.ui.taskList.addItem('{} {}'.format(task_key, task_value.get('name')))
 
     @QtCore.pyqtSlot(dict)
     def autorization_request(self, body):

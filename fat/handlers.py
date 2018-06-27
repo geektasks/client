@@ -2,6 +2,9 @@ import fat.handlers_base as handlers_base
 from db.client_db import ClientDB
 from task.task import Task
 from fat.config import connect_address
+import threading
+import datetime
+import time
 
 """
 Инструкция по созданию функций-обработчиков сообщений
@@ -37,22 +40,22 @@ A. Обработчик сообщений из очередиs
             },
             "another key": "some value"
         }
-        
+
         Для назначения условного обработчика, установите перед функцией декоратор:
         @handler.conditional_queue_handler(type, name),
         где type — тип сообщения
             name — имя сообщения
-        
+
 В. Обработчик сообщений с сервера
 Вызывается при получении сообщения от сервера.
 
     В.1 Обработчик по умолчанию
         Обработчик по умолчанию получает на обработку все сообщения, которые не получили условные обработчики,
         сообщеине — строка
-        
+
         Для назначения обработчика по умолчанию, установите перед функцией (принимает сообщение) декоратор:
         декоратор — @handler.default_socket_handler
-    
+
     В.2 Условный обработчик
         Получает на обработку сообщения, имеющие указанный тип и имя (сообщение — словарь, имеющий (помимо возможных
         прочих) ключ "head", по которому находится другой словарь, имеющий (помимо возможных прочих) два ключа: "type"
@@ -169,6 +172,42 @@ def authorization(message):
     release_queue()
 
 
+def notification(date):
+    date_notification = '99.99.9999'
+    time_notification = '99:99:99'
+    now_date = datetime.datetime.strftime(datetime.datetime.now(), '%d.%m.%Y')
+    now_time = datetime.datetime.strftime(datetime.datetime.now(), '%H:%M:%S')
+    for id, t in date.items():
+        if t[0] and now_date <= t[0] < date_notification:
+            if t[1] and now_time < t[1] < time_notification:
+                date_notification = t[0]
+                time_notification = t[1]
+                server_id = id
+    if date_notification != '99.99.9999':
+        def timer(date_notification, time_notification, server_id):
+            date_r = date_notification + ' ' + time_notification
+            while datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S') > datetime.datetime.now():
+                time.sleep(10)
+            print(datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S'), 'Ураааааааааа')
+            message = {
+                "head": {
+                    "type": "server response",
+                    "name": "notification"
+                },
+                "body": {
+                    "code": '',
+                    "message": datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S'),
+                    'server_id': server_id
+                }
+            }
+            put_message(message)
+            release_queue()
+            notification(date)
+
+        timer = threading.Thread(target=timer, args=(date_notification, time_notification, server_id))
+        timer.start()
+
+
 @handler.conditional_queue_handler('action', 'create task')
 def create_task(message):
     print('create task ->', message)
@@ -184,15 +223,21 @@ def create_task(message):
         server_task_id = message['body'].get('id')
         task_name = data['create_task']['body'].get('name')
         task_description = data['create_task']['body'].get('description')
+        task_date_reminder = data['create_task']['body'].get('date_reminder')
+        task_time_reminder = data['create_task']['body'].get('time_reminder')
         data.pop('create_task')
 
         task = Task(creator=creator, viewer=creator, name=task_name)
+        task.date_reminder = task_date_reminder
+        task.time_reminder = task_time_reminder
         task.description = task_description
         task.id = int(server_task_id)
         task = task.task_dict
         print('task->', task)
 
         data['db'].add_task(task)
+
+
 
     else:
         print(message['body']['code'], message['body']['message'])
@@ -247,21 +292,28 @@ def get_all_tasks(message):
 def get_all_tasks(message):
     '''обновим в бд все server_task_id согласно полученному сообщению'''
     print('get all tasks->', message)
+    # da = data['db'].get_all_tasks()
+    # notification(da)
     put_message(message)
     if message['body']['code'] == 200:
-        for server_task_id, task_name in message['body']['message'].items():
-            task_id = data['db'].get_task_id_by_name(task_name)
+        for server_task_id, task_ in message['body']['message'].items():
+            task_id = data['db'].get_task_id_by_name(task_.get('name'))
 
             if task_id:
                 data['db'].set_task_id(task_id, server_task_id)
             else:
                 creator = data['username']
-                task = Task(creator=creator, name=task_name)
+                task = Task(creator=creator, viewer=creator, name=task_.get('name'))
                 task.id = int(server_task_id)
+                task.description = task_.get('description')
+                task.date_reminder = task_.get('date_reminder')
+                task.time_reminder = task_.get('time_reminder')
                 task = task.task_dict
                 print('task->', task)
                 data['db'].add_task(task)
 
+    da = data['db'].get_all_tasks()
+    notification(da)
     release_queue()
 
 
@@ -275,6 +327,22 @@ def get_task_by_id(message):
 def get_task_by_id(message):
     '''обновим в бд все server_task_id согласно полученному сообщению'''
     print('get task->', message)
+    if message['body']['code'] == 200:
+        creator = data['username']
+        name = message['body'].get('task name')
+        description = message['body'].get('description')
+        date_reminder = message['body'].get('date_reminder')
+        time_reminder = message['body'].get('time_reminder')
+        task = Task(name=name, creator=creator, viewer=creator)
+        task.description = description
+        task.date_reminder = date_reminder
+        task.time_reminder = time_reminder
+        task = task.task_dict
+
+        # data['db'].add_task(task)
+    else:
+        print(message['body']['code'], message['body']['message'])
+
     put_message(message)
     release_queue()
 
