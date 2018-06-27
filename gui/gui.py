@@ -275,6 +275,7 @@ class MyWindow(QtWidgets.QMainWindow):
         @QtCore.pyqtSlot(dict)
         def get_task(body):
             dialog.description.setText(body['description'])
+            dialog.topic.setText(body['task name'])
 
             date_create = body.get('date_create')
             date_deadline = body.get('date_deadline')
