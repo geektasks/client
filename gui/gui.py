@@ -189,6 +189,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.exec()
 
     def exit(self):
+
         print(0)
         self.runThread = False
         print(1)
@@ -196,6 +197,8 @@ class MyWindow(QtWidgets.QMainWindow):
         print(2)
         self.handler.stop()
         print(3)
+        self.close()
+        print(4)
         sys.exit(0)
 
     def sign_in(self):
@@ -209,11 +212,15 @@ class MyWindow(QtWidgets.QMainWindow):
             self.fields_checker(name, password, dialog)
             message = request.authorization(name=name, password=password)
             self.input_queue.put(message)
+        def cancel():
+            dialog.close()
+            return 0
+
 
         dialog.ok.clicked.connect(login)
         dialog.registration.clicked.connect(dialog.close)
         dialog.registration.clicked.connect(self.registration)
-        dialog.cancel.clicked.connect(sys.exit)
+        dialog.cancel.clicked.connect(cancel)
         dialog.exec()
 
     def on_createTask_pressed(self):
