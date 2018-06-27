@@ -289,23 +289,30 @@ def get_all_tasks(message):
 def get_all_tasks(message):
     '''обновим в бд все server_task_id согласно полученному сообщению'''
     print('get all tasks->', message)
-    da = data['db'].get_all_tasks()
-    notification(da)
+    # da = data['db'].get_all_tasks()
+    # notification(da)
     put_message(message)
     if message['body']['code'] == 200:
-        for server_task_id, task_name in message['body']['message'].items():
-            task_id = data['db'].get_task_id_by_name(task_name)
+        for server_task_id, task_ in message['body']['message'].items():
+            task_id = data['db'].get_task_id_by_name(task_.get('name'))
 
             if task_id:
                 data['db'].set_task_id(task_id, server_task_id)
+                data['db'].change_date_reminder(task_id, task_.get('date_reminder'))
+                data['db'].change_time_reminder(task_id, task_.get('time_reminder'))
             else:
                 creator = data['username']
-                task = Task(creator=creator, name=task_name)
+                task = Task(creator=creator, viewer=creator, name=task_.get('name'))
                 task.id = int(server_task_id)
+                task.description = task_.get('description')
+                task.date_reminder = task_.get('date_reminder')
+                task.time_reminder = task_.get('time_reminder')
                 task = task.task_dict
                 print('task->', task)
                 data['db'].add_task(task)
 
+    da = data['db'].get_all_tasks()
+    notification(da)
     release_queue()
 
 
@@ -319,6 +326,22 @@ def get_task_by_id(message):
 def get_task_by_id(message):
     '''обновим в бд все server_task_id согласно полученному сообщению'''
     print('get task->', message)
+    if message['body']['code'] == 200:
+        creator = data['username']
+        name = message['body'].get('task name')
+        description = message['body'].get('description')
+        date_reminder = message['body'].get('date_reminder')
+        time_reminder = message['body'].get('time_reminder')
+        task = Task(name=name, creator=creator, viewer=creator)
+        task.description = description
+        task.date_reminder = date_reminder
+        task.time_reminder = time_reminder
+        task = task.task_dict
+
+        # data['db'].add_task(task)
+    else:
+        print(message['body']['code'], message['body']['message'])
+
     put_message(message)
     release_queue()
 
@@ -405,8 +428,8 @@ def get_all_watchers(message):
     put_message(message)
     release_queue()
 
-
-@handler.periodic_func(period_time=10, with_start=False)
-def periodic_test():
-    print('/' * 15, 'i am periodic function, la-la-laaa', '/' * 15)
-    print('/' * 12, 'running once per 10 seconds, tra-la-laaa', '/' * 12)
+#
+# @handler.periodic_func(period_time=10, with_start=False)
+# def periodic_test():
+#     print('/'*15, 'i am periodic function, la-la-laaa', '/'*15)
+#     print('/'*12, 'running once per 10 seconds, tra-la-laaa', '/'*12)

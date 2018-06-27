@@ -27,8 +27,10 @@ import sqlite3
     3. Радоваться и юзать.
 """
 
+
 class ClientDataBaseError(Exception):
     pass
+
 
 class ClientDB:
 
@@ -341,7 +343,9 @@ class ClientDB:
         :param task_id: локальный идентификатор задачи
         :return: список имен пользователей
         """
-        self.cursor.execute("""SELECT users.user_name FROM users INNER JOIN watchers ON users.user_id = watchers.user_id WHERE watchers.task_id = ?""", [task_id])
+        self.cursor.execute(
+            """SELECT users.user_name FROM users INNER JOIN watchers ON users.user_id = watchers.user_id WHERE watchers.task_id = ?""",
+            [task_id])
         return [x[0] for x in self.cursor.fetchall()]
 
     def get_performers(self, task_id):
@@ -350,7 +354,9 @@ class ClientDB:
         :param task_id: локальный идентификатор задачи
         :return: список имен пользователей
         """
-        self.cursor.execute("""SELECT users.user_name FROM users INNER JOIN performers ON users.user_id = performers.user_id WHERE performers.task_id = ?""", [task_id])
+        self.cursor.execute(
+            """SELECT users.user_name FROM users INNER JOIN performers ON users.user_id = performers.user_id WHERE performers.task_id = ?""",
+            [task_id])
         return [x[0] for x in self.cursor.fetchall()]
 
     def get_comments(self, task_id):
@@ -359,7 +365,9 @@ class ClientDB:
         :param task_id: локальный идентификатор задачи
         :return: список экземпляров класса «Комментарий»
         """
-        self.cursor.execute("""SELECT comments.comment_id, comments.comment_text, comments.comment_time, users.user_name FROM comments INNER JOIN users ON comments.user_id = users.user_id WHERE comments.task_id = ?""", [task_id])
+        self.cursor.execute(
+            """SELECT comments.comment_id, comments.comment_text, comments.comment_time, users.user_name FROM comments INNER JOIN users ON comments.user_id = users.user_id WHERE comments.task_id = ?""",
+            [task_id])
         data = self.cursor.fetchall()
         comments = [{
             "comment id": comment[0],
@@ -412,7 +420,9 @@ class ClientDB:
         :param task_id: локальный идентификатор задачи
         :return: экземпляр класса «Задача» (поле «id» содержит локальный идентификатор задачи)
         """
-        self.cursor.execute("""SELECT tasks.task_name, tasks.task_description, statuses.status_name, users.user_name FROM tasks INNER JOIN statuses ON tasks.status_id = statuses.status_id INNER JOIN users ON tasks.user_id = users.user_id WHERE tasks.task_id = ?""", [task_id])
+        self.cursor.execute(
+            """SELECT tasks.task_name, tasks.task_description, statuses.status_name, users.user_name FROM tasks INNER JOIN statuses ON tasks.status_id = statuses.status_id INNER JOIN users ON tasks.user_id = users.user_id WHERE tasks.task_id = ?""",
+            [task_id])
         data = self.cursor.fetchone()
         task = {
             "id": task_id,
@@ -446,6 +456,27 @@ class ClientDB:
         :return: None
         """
         self.cursor.execute("""UPDATE tasks SET task_description = ? WHERE task_id = ?""", [task_description, task_id])
+        self.conn.commit()
+
+    def change_date_reminder(self, task_id, date_reminder):
+        '''
+        изменим день напоминания
+        :param task_id: локальный идентификатор задачи
+        :param date_reminder: новая дата
+        :return:
+        '''
+        self.cursor.execute("""UPDATE tasks SET date_reminder = ? WHERE task_id = ?""", [date_reminder, task_id])
+        self.conn.commit()
+
+
+    def change_time_reminder(self, task_id, time_reminder):
+        '''
+        изменим время напоминания
+        :param task_id: локальный идентификатор задачи
+        :param time_reminder: новое время
+        :return:
+        '''
+        self.cursor.execute("""UPDATE tasks SET time_reminder = ? WHERE task_id = ?""", [time_reminder, task_id])
         self.conn.commit()
 
     def remove_watcher(self, task_id, user_name):
