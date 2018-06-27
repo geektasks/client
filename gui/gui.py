@@ -250,7 +250,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.exec()
 
     def task(self, task_id = None):
-        # print(task_id) # почему task_id объект qt класса ведь мы указали что task_id = None
+        # print(task_id) # почему task_id объект qt класса если вызывать функцию без аргумента ведь мы указали что task_id = None
         dialog = uic.loadUi('gui/templates/task_create.ui')
         # try:
         #     current_date = QDate.currentDate()
@@ -510,7 +510,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def notification(self, body):
-        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']), lambda: self.task(server_task_id= body['server_id']))
+        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']), lambda: self.task(task_id= body['server_id']))
         window.show()
         window.move2RightBottomCorner()
 
