@@ -3,6 +3,7 @@ import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from gui.templates.main_form import Ui_MainWindow as ui_class
 from time import sleep
+from gui.time_mgm import time_mgm
 
 # from gui.monitor import Monitor
 from fat.handlers import handler
@@ -124,6 +125,7 @@ class MyWindow(QtWidgets.QMainWindow):
                         print('unknown_response')
                 except Exception as err:
                     print(err)
+            sleep(0.5)
 
     ####################################################################################################################
 
@@ -201,7 +203,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.ok.clicked.connect(login)
         dialog.registration.clicked.connect(dialog.close)
         dialog.registration.clicked.connect(self.registration)
-        dialog.cancel.clicked.connect(sys.exit)
+        dialog.cancel.clicked.connect(dialog.close)
         dialog.exec()
 
     def on_createTask_pressed(self):
@@ -303,6 +305,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.cancel.clicked.connect(dialog.close)
+        dialog.TimeMGM.clicked.connect(time_mgm)
         dialog.exec()
 
     def get_all_task(self):
