@@ -3,6 +3,7 @@ import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from PyQt5.QtCore import QDate, QTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
+from gui.notification import PopupWindowClass
 from time import sleep
 
 # from gui.monitor import Monitor
@@ -24,6 +25,7 @@ class MyWindow(QtWidgets.QMainWindow):
     gotWatcher = QtCore.pyqtSignal(dict)  ################################
     gotAllPerformers = QtCore.pyqtSignal(dict)  ################################
     gotAllWatchers = QtCore.pyqtSignal(dict)  ################################
+    gotNotification = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -45,7 +47,8 @@ class MyWindow(QtWidgets.QMainWindow):
             'assign performer': self.gotPerformer,  ################################
             'grant access': self.gotWatcher,  ################################
             'get all performers': self.gotAllPerformers,  ################################
-            'get all watchers': self.gotAllWatchers  ################################
+            'get all watchers': self.gotAllWatchers,  ################################
+            'notification': self.gotNotification
         }
         self.runThread = True
         self.handler = handler
@@ -55,7 +58,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.ui.action_login.triggered.connect(self.sign_in)
         self.ui.action_exit.triggered.connect(self.exit)
 
-        self.ui.taskList.doubleClicked.connect(self.task)
+        self.ui.taskList.doubleClicked.connect(lambda : self.task(task_id= None))
 
         self.gotConsole.connect(self.update_console)
         self.gotErrorRegistration.connect(self.update_error)
@@ -65,6 +68,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotEditedTask.connect(self.edited_task_response)
         self.gotPerformer.connect(self.added_performer)  ################################
         self.gotWatcher.connect(self.added_watcher)  ################################
+        self.gotNotification.connect(self.notification)
         # self.gotAllPerformers.connect(self.update_performers)
         # self.gotAllWatchers.connect(self.update_watchers)
 
@@ -245,9 +249,9 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
-    def task(self):
+    def task(self, task_id = None):
+        # print(task_id) # почему task_id объект qt класса если вызывать функцию без аргумента ведь мы указали что task_id = None
         dialog = uic.loadUi('gui/templates/task_create.ui')
-
         # try:
         #     current_date = QDate.currentDate()
         #     dialog.dateEdit.setDate(current_date)
@@ -257,11 +261,12 @@ class MyWindow(QtWidgets.QMainWindow):
         #     dialog.timeEdit.setTime(current_time)
         # except Exception as err:
         #     print(err)
-
-        task = self.ui.taskList.currentItem().text()
-        task = task.split(' ', maxsplit=1)
-        task_id = int(task[0])  # server_task_id
-        task_name = task[1]
+        task_name = ''
+        if task_id == None:
+            task = self.ui.taskList.currentItem().text()
+            task = task.split(' ', maxsplit=1)
+            task_id = int(task[0])  # server_task_id
+            task_name = task[1]
         message = request.get_task_by_id(task_id)
         self.input_queue.put(message)
 
@@ -502,3 +507,10 @@ class MyWindow(QtWidgets.QMainWindow):
         if body['code'] == 200:
             self.get_all_watchers()
             self.update_console(body)
+
+    @QtCore.pyqtSlot(dict)
+    def notification(self, body):
+        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']), lambda: self.task(task_id= body['server_id']))
+        window.show()
+        window.move2RightBottomCorner()
+

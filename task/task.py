@@ -81,6 +81,28 @@ comments: {comments}\n>>>>>'.format(name=self._name,
         else:
             self._description = text
 
+    @property
+    def date_reminder(self):
+        return self._date_reminder
+
+    @date_reminder.setter
+    def date_reminder(self, text):
+        if self._creator != self.viewer:
+            print('<Only creator could set text>')
+        else:
+            self._date_reminder = text
+
+    @property
+    def time_reminder(self):
+        return self._time_reminder
+
+    @time_reminder.setter
+    def time_reminder(self, text):
+        if self._creator != self.viewer:
+            print('<Only creator could set text>')
+        else:
+            self._time_reminder = text
+
     # TODO протестировать изменение текста в qt форме / сделать подтверждение изменения текста задачи
     def description_edit(self):
         '''

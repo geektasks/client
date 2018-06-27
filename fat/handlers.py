@@ -20,14 +20,14 @@ data — словарь для хранения чего угодно :)
 
 A. Обработчик сообщений из очередиs
 Вызывается при получении сообщения из очереди. 
-    
+
     А.1 Обработчик по умолчанию
         Обработчик по умолчанию получает на обработку все сообщения, которые не получили условные обработчики,
         сообщеине — объект, помещенный в очередь
-        
+
         Для назначения обработчика по умолчанию, установите перед функцией декоратор:
         декоратор — @handler.default_queue_handler
-        
+
     А.2 Условный обработчик
         Получает на обработку сообщения, имеющие указанный тип и имя (сообщение — словарь, имеющий (помимо возможных
         прочих) ключ "head", по которому находится другой словарь, имеющий (помимо возможных прочих) два ключа: "type"
@@ -68,12 +68,12 @@ A. Обработчик сообщений из очередиs
             },
             "another key": "some value"
         }
-        
+
         Для назначения условного обработчика, установите перед функцией (принимает сообщение) декоратор:
         @handler.conditional_socket_handler(type, name),
         где type — тип сообщения
             name — имя сообщения
-            
+
 C. Инициализирующая функция
 Вызывается в начале работы обработчика
 
@@ -85,15 +85,12 @@ D. Функция, вызываемая в случае отключенного
 
 Для назначения инициализирующей функции, установите перед функцией (без аргументов) декоратор:
 @handler.connection_refused_func
-            
+
 * декорируемые функции могут иметь одинаковые названия
 """
 
-
-#Адресс серевера содержиться в файле  fat.config.py
+# Адресс серевера содержиться в файле  fat.config.py
 handler = connect_address()
-
-
 
 
 @handler.init_func
@@ -301,6 +298,8 @@ def get_all_tasks(message):
 
             if task_id:
                 data['db'].set_task_id(task_id, server_task_id)
+                data['db'].change_date_reminder(task_id, task_.get('date_reminder'))
+                data['db'].change_time_reminder(task_id, task_.get('time_reminder'))
             else:
                 creator = data['username']
                 task = Task(creator=creator, viewer=creator, name=task_.get('name'))
@@ -429,8 +428,8 @@ def get_all_watchers(message):
     put_message(message)
     release_queue()
 
-
-@handler.periodic_func(period_time=10, with_start=False)
-def periodic_test():
-    print('/'*15, 'i am periodic function, la-la-laaa', '/'*15)
-    print('/'*12, 'running once per 10 seconds, tra-la-laaa', '/'*12)
+#
+# @handler.periodic_func(period_time=10, with_start=False)
+# def periodic_test():
+#     print('/'*15, 'i am periodic function, la-la-laaa', '/'*15)
+#     print('/'*12, 'running once per 10 seconds, tra-la-laaa', '/'*12)
