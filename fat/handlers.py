@@ -429,7 +429,8 @@ def get_all_watchers(message):
     put_message(message)
     release_queue()
 
-# @handler.periodic_func(period_time=10, with_start=False)
-# def periodic_test():
-#     print('/' * 15, 'i am periodic function, la-la-laaa', '/' * 15)
-#     print('/' * 12, 'running once per 10 seconds, tra-la-laaa', '/' * 12)
+
+@handler.periodic_func(period_time=10, with_start=False)
+def periodic_test():
+    print('/'*15, 'i am periodic function, la-la-laaa', '/'*15)
+    print('/'*12, 'running once per 10 seconds, tra-la-laaa', '/'*12)
