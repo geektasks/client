@@ -58,7 +58,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.ui.action_login.triggered.connect(self.sign_in)
         self.ui.action_exit.triggered.connect(self.exit)
 
-        self.ui.taskList.doubleClicked.connect(self.task)
+        self.ui.taskList.doubleClicked.connect(lambda : self.task(task_id= None))
 
         self.gotConsole.connect(self.update_console)
         self.gotErrorRegistration.connect(self.update_error)
@@ -249,9 +249,9 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
-    def task(self, task_id = None, server_task_id = None ):
+    def task(self, task_id = None):
+        # print(task_id) # почему task_id объект qt класса ведь мы указали что task_id = None
         dialog = uic.loadUi('gui/templates/task_create.ui')
-        #print(task_id) # почему task_id объект qt класса ведь мы указали что task_id = None
         # try:
         #     current_date = QDate.currentDate()
         #     dialog.dateEdit.setDate(current_date)
@@ -262,13 +262,12 @@ class MyWindow(QtWidgets.QMainWindow):
         # except Exception as err:
         #     print(err)
         task_name = ''
-        if server_task_id == None:
+        if task_id == None:
             task = self.ui.taskList.currentItem().text()
             task = task.split(' ', maxsplit=1)
-            server_task_id = int(task[0])  # server_task_id
-            print(server_task_id)
+            task_id = int(task[0])  # server_task_id
             task_name = task[1]
-        message = request.get_task_by_id(server_task_id)
+        message = request.get_task_by_id(task_id)
         self.input_queue.put(message)
 
         @QtCore.pyqtSlot(dict)
@@ -298,10 +297,10 @@ class MyWindow(QtWidgets.QMainWindow):
 
         self.gotTaskId.connect(get_task)
 
-        message = request.get_all_performers(task_id=server_task_id)  ################################
+        message = request.get_all_performers(task_id=task_id)  ################################
         self.input_queue.put(message)  ################################
 
-        message = request.get_all_watchers(task_id=server_task_id)  ################################
+        message = request.get_all_watchers(task_id=task_id)  ################################
         self.input_queue.put(message)  ################################
 
         @QtCore.pyqtSlot(dict)  ################################
