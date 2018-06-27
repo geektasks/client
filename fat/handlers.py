@@ -234,8 +234,6 @@ def create_task(message):
 
         data['db'].add_task(task)
 
-
-
     else:
         print(message['body']['code'], message['body']['message'])
 
@@ -279,6 +277,50 @@ def edit_task(message):
     release_queue()
 
 
+@handler.conditional_queue_handler('action', 'edit date reminder')
+def edit_date_reminder(message):
+    data['edit_date_reminder'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'edit date reminder')
+def edit_date_reminder(message):
+    print('обрабатываем изменение даты')
+    if message['body']['code'] == 200:
+        server_task_id = data['edit_date_reminder']['body'].get('id')
+        local_task_id = data['db'].get_local_task_id(server_task_id)
+        date_reminder = data['edit_date_reminder']['body'].get('date_reminder')
+        data['db'].change_date_reminder(task_id=local_task_id, date_reminder=date_reminder)
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('edit_date_reminder')
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'edit time reminder')
+def edit_time_reminder(message):
+    data['edit_time_reminder'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'edit time reminder')
+def edit_time_reminder(message):
+    print('обрабатываем изменение времени')
+    if message['body']['code'] == 200:
+        server_task_id = data['edit_time_reminder']['body'].get('id')
+        local_task_id = data['db'].get_local_task_id(server_task_id)
+        date_reminder = data['edit_time_reminder']['body'].get('time_reminder')
+        data['db'].change_time_reminder(task_id=local_task_id, time_reminder=date_reminder)
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('edit_time_reminder')
+    put_message(message)
+    release_queue()
+
+
 @handler.conditional_queue_handler('action', 'get all tasks')
 def get_all_tasks(message):
     block_queue()
@@ -312,6 +354,7 @@ def get_all_tasks(message):
                 data['db'].add_task(task)
 
     da = data['db'].get_all_tasks()
+    print('da', da)
     notification(da)
     release_queue()
 

@@ -94,6 +94,12 @@ class JIMRequest:
         if name and description:
             return JIMRequest(session_id=self.session_id, id=task_id, name=name, description=description)
 
+    def edit_date_reminder(self, task_id, date_reminder):
+        return JIMRequest(session_id=self.session_id, id=task_id, date_reminder=date_reminder)
+
+    def edit_time_reminder(self, task_id, time_reminder):
+        return JIMRequest(session_id=self.session_id, id=task_id, time_reminder=time_reminder)
+
     def get_all_tasks(self):
         return JIMRequest(session_id=self.session_id)
 

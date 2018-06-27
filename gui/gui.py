@@ -58,7 +58,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.ui.action_login.triggered.connect(self.sign_in)
         self.ui.action_exit.triggered.connect(self.exit)
 
-        self.ui.taskList.doubleClicked.connect(lambda : self.task(task_id= None))
+        self.ui.taskList.doubleClicked.connect(lambda: self.task(task_id=None))
 
         self.gotConsole.connect(self.update_console)
         self.gotErrorRegistration.connect(self.update_error)
@@ -114,6 +114,8 @@ class MyWindow(QtWidgets.QMainWindow):
             data = False
             if not self.output_queue.empty():
                 data = self.output_queue.get(timeout=0.2)
+            else:
+                sleep(0.5)
             if data:
                 print('обрабатываем в гуи', data)
                 body = data['body']
@@ -249,7 +251,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
-    def task(self, task_id = None):
+    def task(self, task_id=None):
         # print(task_id) # почему task_id объект qt класса если вызывать функцию без аргумента ведь мы указали что task_id = None
         dialog = uic.loadUi('gui/templates/task_create.ui')
         # try:
@@ -324,6 +326,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.setFocus()
 
         def task_update():
+            '''update topic and description'''
             topic = dialog.topic.text()
             description = dialog.description.toPlainText()
             if topic != task_name:
@@ -333,32 +336,26 @@ class MyWindow(QtWidgets.QMainWindow):
                 message = request.edit_task(task_id=task_id, description=description)
                 self.input_queue.put(message)
 
-        # @QtCore.pyqtSlot(dict)
-        # def get_task(body):
-        #     dialog.description.setText(body['description'])
-        #
-        #     date_create = body.get('date_create')
-        #     date_deadline = body.get('date_deadline')
-        #     date_reminder = body.get('date_reminder')
-        #     time_reminder = body.get('time_reminder')
-        #
-        #     try:
-        #         date_create = QDate.fromString(date_create, 'dd.MM.yyyy')
-        #         date_deadline = QDate.fromString(date_deadline, 'dd.MM.yyyy')
-        #         date_reminder = QDate.fromString(date_reminder, 'dd.MM.yyyy')
-        #         time_reminder = QTime.fromString(time_reminder)
-        #
-        #         print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
-        #
-        #         dialog.dateEdit.setDate(date_create)
-        #         dialog.dateEdit_2.setDate(date_deadline)
-        #         dialog.dateEdit_3.setDate(date_reminder)
-        #         dialog.timeEdit.setTime(time_reminder)
-        #
-        #     except Exception as err:
-        #         print('****trying to set date from string', err)
-        #
-        # self.gotTaskId.connect(get_task)
+            date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
+            message = request.edit_date_reminder(task_id=task_id, date_reminder=date_reminder)
+            self.input_queue.put(message)
+
+            time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
+            message = request.edit_time_reminder(task_id=task_id, time_reminder=time_reminder)
+            self.input_queue.put(message)
+
+            # def edit_date_reminder():
+            #     date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
+            #     message = request.edit_date_reminder(task_id=task_id, date_reminder=date_reminder)
+            #     self.input_queue.put(message)
+            #
+            # def edit_time_reminder():
+            #     time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
+            #     message = request.edit_time_reminder(task_id=task_id, time_reminder=time_reminder)
+            #     self.input_queue.put(message)
+            #
+            # dialog.dateEdit_3.dateChanged.connect(edit_date_reminder)
+            # dialog.timeEdit.dateChanged.connect(edit_time_reminder)
 
         def add_people():
             dialog = uic.loadUi('gui/templates/users.ui')
@@ -510,7 +507,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(dict)
     def notification(self, body):
-        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']), lambda: self.task(task_id= body['server_id']))
+        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']),
+                                  lambda: self.task(task_id=body['server_id']))
         window.show()
         window.move2RightBottomCorner()
-

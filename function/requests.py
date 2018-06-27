@@ -67,6 +67,22 @@ def edit_task(task_id, name=None, description=None):
     return message
 
 
+def edit_date_reminder(task_id, date_reminder):
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error->', err)
+    message = session.edit_date_reminder(task_id=task_id, date_reminder=date_reminder).jim_dict
+    return message
+
+def edit_time_reminder(task_id, time_reminder):
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error->', err)
+    message = session.edit_time_reminder(task_id=task_id, time_reminder=time_reminder).jim_dict
+    return message
+
 def get_all_tasks():
     try:
         session.session_id = handlers.handler.data['session_id']
