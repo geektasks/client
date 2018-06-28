@@ -4,6 +4,7 @@ from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from PyQt5.QtCore import QDate, QTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
 from gui.notification import PopupWindowClass
+from gui.utils import next_day
 from time import sleep
 
 # from gui.monitor import Monitor
@@ -222,7 +223,7 @@ class MyWindow(QtWidgets.QMainWindow):
         try:
             current_date = QDate.currentDate()
             dialog.dateEdit.setDate(current_date)
-            dialog.dateEdit_2.setDate(current_date)
+            dialog.dateEdit_2.setDate(next_day(current_date))
             dialog.dateEdit_3.setDate(current_date)
             current_time = QTime.currentTime()
             dialog.timeEdit.setTime(current_time)
