@@ -6,289 +6,283 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>491</width>
-    <height>575</height>
+    <width>540</width>
+    <height>621</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QWidget" name="">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>10</y>
-     <width>455</width>
-     <height>553</height>
-    </rect>
-   </property>
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_5">
-        <item>
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>Тема:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="topic"/>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Дата начала:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QDateEdit" name="dateEdit">
-          <property name="maximumDateTime">
-           <datetime>
-            <hour>21</hour>
-            <minute>59</minute>
-            <second>59</second>
-            <year>3000</year>
-            <month>12</month>
-            <day>31</day>
-           </datetime>
-          </property>
-          <property name="minimumDate">
-           <date>
-            <year>2018</year>
-            <month>1</month>
-            <day>1</day>
-           </date>
-          </property>
-          <property name="maximumTime">
-           <time>
-            <hour>21</hour>
-            <minute>59</minute>
-            <second>59</second>
-           </time>
-          </property>
-          <property name="currentSection">
-           <enum>QDateTimeEdit::DaySection</enum>
-          </property>
-          <property name="calendarPopup">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Срок:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QDateEdit" name="dateEdit_2">
-          <property name="maximumDateTime">
-           <datetime>
-            <hour>23</hour>
-            <minute>59</minute>
-            <second>59</second>
-            <year>3000</year>
-            <month>12</month>
-            <day>31</day>
-           </datetime>
-          </property>
-          <property name="minimumDateTime">
-           <datetime>
-            <hour>0</hour>
-            <minute>0</minute>
-            <second>0</second>
-            <year>2018</year>
-            <month>1</month>
-            <day>1</day>
-           </datetime>
-          </property>
-          <property name="calendarPopup">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
-    <item row="1" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_3">
-      <item>
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>Участники:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QListWidget" name="listPeople"/>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="verticalLayout">
-          <item>
-           <widget class="QPushButton" name="addPeople">
-            <property name="text">
-             <string>Add</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="TimeMGM">
-            <property name="text">
-             <string>TimeMgm</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
-    <item row="2" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QCheckBox" name="checkBox">
-        <property name="text">
-         <string>Напоминание:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>Дата:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QDateEdit" name="dateEdit_3">
-        <property name="dateTime">
-         <datetime>
-          <hour>0</hour>
-          <minute>0</minute>
-          <second>0</second>
-          <year>2018</year>
-          <month>9</month>
-          <day>14</day>
-         </datetime>
-        </property>
-        <property name="minimumDateTime">
-         <datetime>
-          <hour>0</hour>
-          <minute>0</minute>
-          <second>0</second>
-          <year>2018</year>
-          <month>1</month>
-          <day>1</day>
-         </datetime>
-        </property>
-        <property name="maximumDate">
-         <date>
-          <year>3000</year>
-          <month>12</month>
-          <day>31</day>
-         </date>
-        </property>
-        <property name="calendarPopup">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>Время:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTimeEdit" name="timeEdit">
-        <property name="calendarPopup">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="3" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_5">
-      <item>
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>Описание:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTextEdit" name="description"/>
-      </item>
-     </layout>
-    </item>
-    <item row="4" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>208</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="addTask">
-        <property name="text">
-         <string>Ok</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="delTask">
-        <property name="text">
-         <string>Del</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="cancel">
-        <property name="text">
-         <string>Cancel</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-   </layout>
-  </widget>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Тема:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="topic"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Дата начала:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateEdit" name="dateEdit">
+           <property name="maximumDateTime">
+            <datetime>
+             <hour>21</hour>
+             <minute>59</minute>
+             <second>59</second>
+             <year>3000</year>
+             <month>12</month>
+             <day>31</day>
+            </datetime>
+           </property>
+           <property name="minimumDate">
+            <date>
+             <year>2018</year>
+             <month>1</month>
+             <day>1</day>
+            </date>
+           </property>
+           <property name="maximumTime">
+            <time>
+             <hour>21</hour>
+             <minute>59</minute>
+             <second>59</second>
+            </time>
+           </property>
+           <property name="currentSection">
+            <enum>QDateTimeEdit::DaySection</enum>
+           </property>
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Срок:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDateEdit" name="dateEdit_2">
+           <property name="maximumDateTime">
+            <datetime>
+             <hour>23</hour>
+             <minute>59</minute>
+             <second>59</second>
+             <year>3000</year>
+             <month>12</month>
+             <day>31</day>
+            </datetime>
+           </property>
+           <property name="minimumDateTime">
+            <datetime>
+             <hour>0</hour>
+             <minute>0</minute>
+             <second>0</second>
+             <year>2018</year>
+             <month>1</month>
+             <day>1</day>
+            </datetime>
+           </property>
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="0">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Участники:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QListWidget" name="listPeople"/>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QPushButton" name="addPeople">
+             <property name="text">
+              <string>Add</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="TimeMGM">
+             <property name="text">
+              <string>TimeMgm</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item row="2" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QCheckBox" name="checkBox">
+         <property name="text">
+          <string>Напоминание:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Дата:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDateEdit" name="dateEdit_3">
+         <property name="dateTime">
+          <datetime>
+           <hour>0</hour>
+           <minute>0</minute>
+           <second>0</second>
+           <year>2018</year>
+           <month>9</month>
+           <day>14</day>
+          </datetime>
+         </property>
+         <property name="minimumDateTime">
+          <datetime>
+           <hour>0</hour>
+           <minute>0</minute>
+           <second>0</second>
+           <year>2018</year>
+           <month>1</month>
+           <day>1</day>
+          </datetime>
+         </property>
+         <property name="maximumDate">
+          <date>
+           <year>3000</year>
+           <month>12</month>
+           <day>31</day>
+          </date>
+         </property>
+         <property name="calendarPopup">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Время:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTimeEdit" name="timeEdit">
+         <property name="calendarPopup">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="3" column="0">
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Описание:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="description"/>
+       </item>
+      </layout>
+     </item>
+     <item row="4" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>208</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="addTask">
+         <property name="text">
+          <string>Ok</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="delTask">
+         <property name="text">
+          <string>Del</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="cancel">
+         <property name="text">
+          <string>Cancel</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>
