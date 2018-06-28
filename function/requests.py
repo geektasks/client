@@ -41,13 +41,33 @@ def presence(name):
     return message
 
 
-def create_task(name, description):
+def create_task(name, description, date_create=None,
+                date_deadline=None,
+                date_reminder=None,
+                time_reminder=None):
     print('session_id->', handlers.handler.data['session_id'])
     try:
         session.session_id = int(handlers.handler.data['session_id'])
     except Exception as err:
         print('error->', err)
-    message = session.create_task(name=name, description=description).jim_dict
+    message = session.create_task(name=name, description=description, date_create=date_create,
+                                  date_deadline=date_deadline,
+                                  date_reminder=date_reminder,
+                                  time_reminder=time_reminder).jim_dict
+    return message
+
+
+def delete_task(task_id):
+    '''
+
+    :param task_id: server_task_id
+    :return:
+    '''
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error*->', err)
+    message = session.delete_task(task_id=task_id).jim_dict
     return message
 
 
@@ -58,6 +78,24 @@ def edit_task(task_id, name=None, description=None):
     except Exception as err:
         print('error*->', err)
     message = session.edit_task(task_id=task_id, name=name, description=description).jim_dict
+    return message
+
+
+def edit_date_reminder(task_id, date_reminder):
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error->', err)
+    message = session.edit_date_reminder(task_id=task_id, date_reminder=date_reminder).jim_dict
+    return message
+
+
+def edit_time_reminder(task_id, time_reminder):
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error->', err)
+    message = session.edit_time_reminder(task_id=task_id, time_reminder=time_reminder).jim_dict
     return message
 
 

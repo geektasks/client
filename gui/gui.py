@@ -1,7 +1,9 @@
 import sys
 import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
+from PyQt5.QtCore import QDate, QTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
+from gui.notification import PopupWindowClass
 from time import sleep
 
 # from gui.monitor import Monitor
@@ -23,6 +25,8 @@ class MyWindow(QtWidgets.QMainWindow):
     gotWatcher = QtCore.pyqtSignal(dict)  ################################
     gotAllPerformers = QtCore.pyqtSignal(dict)  ################################
     gotAllWatchers = QtCore.pyqtSignal(dict)  ################################
+    gotNotification = QtCore.pyqtSignal(dict)
+    gotDeletedTask = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -44,9 +48,11 @@ class MyWindow(QtWidgets.QMainWindow):
             'assign performer': self.gotPerformer,  ################################
             'grant access': self.gotWatcher,  ################################
             'get all performers': self.gotAllPerformers,  ################################
-            'get all watchers': self.gotAllWatchers  ################################
+            'get all watchers': self.gotAllWatchers,  ################################
+            'notification': self.gotNotification,
+            'delete task': self.gotDeletedTask
         }
-        self.runThread=True
+        self.runThread = True
         self.handler = handler
         self.start_handler()
         self.start_monitor()
@@ -54,7 +60,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.ui.action_login.triggered.connect(self.sign_in)
         self.ui.action_exit.triggered.connect(self.exit)
 
-        self.ui.taskList.doubleClicked.connect(self.task)
+        self.ui.taskList.doubleClicked.connect(lambda: self.task(task_id=None))
 
         self.gotConsole.connect(self.update_console)
         self.gotErrorRegistration.connect(self.update_error)
@@ -64,9 +70,10 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotEditedTask.connect(self.edited_task_response)
         self.gotPerformer.connect(self.added_performer)  ################################
         self.gotWatcher.connect(self.added_watcher)  ################################
+        self.gotNotification.connect(self.notification)
+        self.gotDeletedTask.connect(self.task_deleted)
         # self.gotAllPerformers.connect(self.update_performers)
         # self.gotAllWatchers.connect(self.update_watchers)
-
 
     def start_monitor(self):
         self.t1 = threading.Thread(target=self.monitor)
@@ -110,6 +117,8 @@ class MyWindow(QtWidgets.QMainWindow):
             data = False
             if not self.output_queue.empty():
                 data = self.output_queue.get(timeout=0.2)
+            else:
+                sleep(0.5)
             if data:
                 print('обрабатываем в гуи', data)
                 body = data['body']
@@ -177,15 +186,17 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.cancel.clicked.connect(dialog_reg.close)
         dialog_reg.cancel.clicked.connect(self.sign_in)
         dialog_reg.exec()
+
     def exit(self):
         print(0)
-        self.runThread=False
+        self.runThread = False
         print(1)
         self.t1.join()
         print(2)
         self.handler.stop()
         print(3)
         sys.exit(0)
+
     def sign_in(self):
 
         dialog = uic.loadUi('gui/templates/sign_in.ui')
@@ -208,24 +219,89 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog = uic.loadUi('gui/templates/task_create.ui')
         dialog.topic.setFocus()
 
+        try:
+            current_date = QDate.currentDate()
+            dialog.dateEdit.setDate(current_date)
+            dialog.dateEdit_2.setDate(current_date)
+            dialog.dateEdit_3.setDate(current_date)
+            current_time = QTime.currentTime()
+            dialog.timeEdit.setTime(current_time)
+        except Exception as err:
+            print(err)
+
         def task_create():
+
             topic = dialog.topic.text()
             description = dialog.description.toPlainText()
-            message = request.create_task(name=topic, description=description)
-            self.input_queue.put(message)
+            try:
+                date_create = dialog.dateEdit.date().toString('dd.MM.yyyy')
+                date_deadline = dialog.dateEdit_2.date().toString('dd.MM.yyyy')
+                date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
+                time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
+            except Exception as err:
+                print('************')
+                print(err)
+            else:
+                message = request.create_task(name=topic, description=description,
+                                              date_create=date_create,
+                                              date_deadline=date_deadline,
+                                              date_reminder=date_reminder,
+                                              time_reminder=time_reminder)
+                print('new task create', message)
+                self.input_queue.put(message)
 
         dialog.addTask.clicked.connect(task_create)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.exec()
 
-    def task(self):
+    def task(self, task_id=None):
+        # print(task_id) # почему task_id объект qt класса если вызывать функцию без аргумента ведь мы указали что task_id = None
         dialog = uic.loadUi('gui/templates/task_create.ui')
-        task = self.ui.taskList.currentItem().text()
-        task = task.split(' ', maxsplit=1)
-        task_id = int(task[0])  # server_task_id
-        task_name = task[1]
+        # try:
+        #     current_date = QDate.currentDate()
+        #     dialog.dateEdit.setDate(current_date)
+        #     dialog.dateEdit_2.setDate(current_date)
+        #     dialog.dateEdit_3.setDate(current_date)
+        #     current_time = QTime.currentTime()
+        #     dialog.timeEdit.setTime(current_time)
+        # except Exception as err:
+        #     print(err)
+        task_name = ''
+        if task_id == None:
+            task = self.ui.taskList.currentItem().text()
+            task = task.split(' ', maxsplit=1)
+            task_id = int(task[0])  # server_task_id
+            task_name = task[1]
         message = request.get_task_by_id(task_id)
         self.input_queue.put(message)
+
+        @QtCore.pyqtSlot(dict)
+        def get_task(body):
+            dialog.description.setText(body['description'])
+            dialog.topic.setText(body['task name'])
+
+            date_create = body.get('date_create')
+            date_deadline = body.get('date_deadline')
+            date_reminder = body.get('date_reminder')
+            time_reminder = body.get('time_reminder')
+
+            try:
+                date_create = QDate.fromString(date_create, 'dd.MM.yyyy')
+                date_deadline = QDate.fromString(date_deadline, 'dd.MM.yyyy')
+                date_reminder = QDate.fromString(date_reminder, 'dd.MM.yyyy')
+                time_reminder = QTime.fromString(time_reminder)
+
+                print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
+
+                dialog.dateEdit.setDate(date_create)
+                dialog.dateEdit_2.setDate(date_deadline)
+                dialog.dateEdit_3.setDate(date_reminder)
+                dialog.timeEdit.setTime(time_reminder)
+
+            except Exception as err:
+                print('****trying to set date from string', err)
+
+        self.gotTaskId.connect(get_task)
 
         message = request.get_all_performers(task_id=task_id)  ################################
         self.input_queue.put(message)  ################################
@@ -254,6 +330,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.setFocus()
 
         def task_update():
+            '''update topic and description'''
             topic = dialog.topic.text()
             description = dialog.description.toPlainText()
             if topic != task_name:
@@ -263,9 +340,26 @@ class MyWindow(QtWidgets.QMainWindow):
                 message = request.edit_task(task_id=task_id, description=description)
                 self.input_queue.put(message)
 
-        @QtCore.pyqtSlot(dict)
-        def get_task(body):
-            dialog.description.setText(body['description'])
+            date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
+            message = request.edit_date_reminder(task_id=task_id, date_reminder=date_reminder)
+            self.input_queue.put(message)
+
+            time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
+            message = request.edit_time_reminder(task_id=task_id, time_reminder=time_reminder)
+            self.input_queue.put(message)
+
+            # def edit_date_reminder():
+            #     date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
+            #     message = request.edit_date_reminder(task_id=task_id, date_reminder=date_reminder)
+            #     self.input_queue.put(message)
+            #
+            # def edit_time_reminder():
+            #     time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
+            #     message = request.edit_time_reminder(task_id=task_id, time_reminder=time_reminder)
+            #     self.input_queue.put(message)
+            #
+            # dialog.dateEdit_3.dateChanged.connect(edit_date_reminder)
+            # dialog.timeEdit.dateChanged.connect(edit_time_reminder)
 
         def add_people():
             dialog = uic.loadUi('gui/templates/users.ui')
@@ -298,11 +392,51 @@ class MyWindow(QtWidgets.QMainWindow):
             dialog.userName.textChanged.connect(search_user)
             dialog.exec()
 
-        self.gotTaskId.connect(get_task)
+        def delete_task():
+            message = request.delete_task(task_id=task_id)
+            self.input_queue.put(message)
+
+        def time_mgm():
+            dialog = uic.loadUi('gui/templates/TimeMgm_form.ui')
+            try:
+                dialog.NameOfTask.setText(task_name)
+                dialog.NameOfTask.setAlignment(QtCore.Qt.AlignCenter)
+            except Exception as err:
+                print(err)
+
+            def get_work():
+                interval_of_work = dialog.interval_of_work.value()
+                print('interval_of_work', interval_of_work, 'minutes')
+
+            def get_relax():
+                interval_of_relax = dialog.interval_of_relax.value()
+                print('interval_of_relax', interval_of_relax, 'minutes')
+
+            def sum_work():
+                summary_of_work = dialog.SummaryOfWork.value()
+                print('summary of work', summary_of_work, 'hours')
+                sum_relax()
+
+            def sum_relax():
+                summary_of_work = dialog.SummaryOfWork.value()
+                interval_of_work = dialog.interval_of_work.value()
+                interval_of_relax = dialog.interval_of_relax.value()
+                period = (summary_of_work * 60) / (interval_of_work + interval_of_relax)
+                dialog.SummaryOfRelax.setText(str(round((interval_of_relax * period) / 60, 1)))
+
+            dialog.interval_of_work.valueChanged.connect(get_work)
+            dialog.interval_of_relax.valueChanged.connect(get_relax)
+            dialog.SummaryOfWork.valueChanged.connect(sum_work)
+            dialog.exec()
+
+        # self.gotTaskId.connect(get_task)
         dialog.addPeople.clicked.connect(add_people)
         dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.cancel.clicked.connect(dialog.close)
+        dialog.TimeMGM.clicked.connect(time_mgm)
+        dialog.delTask.clicked.connect(delete_task)
+        dialog.delTask.clicked.connect(dialog.accept)
         dialog.exec()
 
     def get_all_task(self):
@@ -318,7 +452,6 @@ class MyWindow(QtWidgets.QMainWindow):
         task_id = int(task[0])  # server_task_id
         message = request.get_all_performers(task_id=task_id)
         self.input_queue.put(message)
-
 
     def get_all_watchers(self):
         print('отправляю запрос на всех наблюдателей')
@@ -352,7 +485,7 @@ class MyWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(dict)
     def update_tasks_list(self, body):
         for task_key, task_value in body['message'].items():
-            self.ui.taskList.addItem('{} {}'.format(task_key, task_value))
+            self.ui.taskList.addItem('{} {}'.format(task_key, task_value.get('name')))
 
     @QtCore.pyqtSlot(dict)
     def autorization_request(self, body):
@@ -381,3 +514,15 @@ class MyWindow(QtWidgets.QMainWindow):
         if body['code'] == 200:
             self.get_all_watchers()
             self.update_console(body)
+
+    @QtCore.pyqtSlot(dict)
+    def notification(self, body):
+        window = PopupWindowClass('{} - {}'.format(body['code'], body['message']),
+                                  lambda: self.task(task_id=body['server_id']))
+        window.show()
+        window.move2RightBottomCorner()
+
+    @QtCore.pyqtSlot(dict)
+    def task_deleted(self, body):
+        if body['code'] == 200:
+            print('DELETED!!!')
