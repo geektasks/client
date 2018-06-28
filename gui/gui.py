@@ -525,4 +525,5 @@ class MyWindow(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(dict)
     def task_deleted(self, body):
         if body['code'] == 200:
-            print('DELETED!!!')
+            self.get_all_task()
+            self.update_console(body)
