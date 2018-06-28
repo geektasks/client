@@ -57,6 +57,20 @@ def create_task(name, description, date_create=None,
     return message
 
 
+def delete_task(task_id):
+    '''
+
+    :param task_id: server_task_id
+    :return:
+    '''
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error*->', err)
+    message = session.delete_task(task_id=task_id).jim_dict
+    return message
+
+
 def edit_task(task_id, name=None, description=None):
     '''task_id == server_task_id'''
     try:
@@ -75,6 +89,7 @@ def edit_date_reminder(task_id, date_reminder):
     message = session.edit_date_reminder(task_id=task_id, date_reminder=date_reminder).jim_dict
     return message
 
+
 def edit_time_reminder(task_id, time_reminder):
     try:
         session.session_id = handlers.handler.data['session_id']
@@ -82,6 +97,7 @@ def edit_time_reminder(task_id, time_reminder):
         print('error->', err)
     message = session.edit_time_reminder(task_id=task_id, time_reminder=time_reminder).jim_dict
     return message
+
 
 def get_all_tasks():
     try:

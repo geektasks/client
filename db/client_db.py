@@ -232,6 +232,16 @@ class ClientDB:
         self.conn.commit()
         return task_id
 
+
+    def delete_task(self, server_id):
+        '''
+
+        :param server_id: server_task_id
+        :return:
+        '''
+        self.cursor.execute("""DELETE FROM tasks WHERE server_task_id = ?""", [server_id])
+        self.conn.commit()
+
     # Нужна ли проверка на существование задачи?
     def set_task_id(self, local_id, server_id):
         """

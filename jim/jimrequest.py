@@ -85,6 +85,14 @@ class JIMRequest:
                           date_reminder=date_reminder,
                           time_reminder=time_reminder)
 
+    def delete_task(self, task_id):
+        '''
+
+        :param task_id:server_task_id
+        :return:
+        '''
+        return JIMRequest(session_id=self.session_id, id=task_id)
+
     def edit_task(self, task_id, name=None, description=None):
         '''task_id == server_task_id'''
         if name:
@@ -171,7 +179,7 @@ if __name__ == '__main__':
     print('presence', presence)
 
     create_task = session.create_task(name='New', description='new description', date_create='date', date_deadline=
-                                      'date', date_reminder='date', time_reminder='time').jim_dict
+    'date', date_reminder='date', time_reminder='time').jim_dict
     print('create', create_task)
 
     print('-' * 50)

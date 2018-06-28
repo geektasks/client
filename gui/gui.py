@@ -26,6 +26,7 @@ class MyWindow(QtWidgets.QMainWindow):
     gotAllPerformers = QtCore.pyqtSignal(dict)  ################################
     gotAllWatchers = QtCore.pyqtSignal(dict)  ################################
     gotNotification = QtCore.pyqtSignal(dict)
+    gotDeletedTask = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -48,7 +49,8 @@ class MyWindow(QtWidgets.QMainWindow):
             'grant access': self.gotWatcher,  ################################
             'get all performers': self.gotAllPerformers,  ################################
             'get all watchers': self.gotAllWatchers,  ################################
-            'notification': self.gotNotification
+            'notification': self.gotNotification,
+            'delete task': self.gotDeletedTask
         }
         self.runThread = True
         self.handler = handler
@@ -69,6 +71,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotPerformer.connect(self.added_performer)  ################################
         self.gotWatcher.connect(self.added_watcher)  ################################
         self.gotNotification.connect(self.notification)
+        self.gotDeletedTask.connect(self.task_deleted)
         # self.gotAllPerformers.connect(self.update_performers)
         # self.gotAllWatchers.connect(self.update_watchers)
 
@@ -389,6 +392,10 @@ class MyWindow(QtWidgets.QMainWindow):
             dialog.userName.textChanged.connect(search_user)
             dialog.exec()
 
+        def delete_task():
+            message = request.delete_task(task_id=task_id)
+            self.input_queue.put(message)
+
         def time_mgm():
             dialog = uic.loadUi('gui/templates/TimeMgm_form.ui')
             try:
@@ -428,6 +435,8 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.cancel.clicked.connect(dialog.close)
         dialog.TimeMGM.clicked.connect(time_mgm)
+        dialog.delTask.clicked.connect(delete_task)
+        dialog.delTask.clicked.connect(dialog.accept)
         dialog.exec()
 
     def get_all_task(self):
@@ -512,3 +521,8 @@ class MyWindow(QtWidgets.QMainWindow):
                                   lambda: self.task(task_id=body['server_id']))
         window.show()
         window.move2RightBottomCorner()
+
+    @QtCore.pyqtSlot(dict)
+    def task_deleted(self, body):
+        if body['code'] == 200:
+            print('DELETED!!!')

@@ -241,6 +241,24 @@ def create_task(message):
     release_queue()
 
 
+@handler.conditional_queue_handler('action', 'delete task')
+def delete_task(message):
+    print('delete task ->', message)
+    data['delete_task'] = message
+    block_queue()
+    send_message(message)
+
+@handler.conditional_socket_handler('server response', 'delete task')
+def delete_task(message):
+    if message['body']['code'] == 200:
+        data['db'].delete_task(server_id=data['delete_task']['body']['id'])
+    else:
+        print(message['body']['code'], message['body']['message'])
+
+    data.pop('delete_task')
+    put_message(message)
+    release_queue()
+
 @handler.conditional_queue_handler('action', 'edit task')
 def edit_task(message):
     print('edit task ->', message)
