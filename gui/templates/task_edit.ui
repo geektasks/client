@@ -137,6 +137,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="TimeMGM">
+             <property name="text">
+              <string>TimeMgm</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -254,6 +261,13 @@
         <widget class="QPushButton" name="addTask">
          <property name="text">
           <string>Ok</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="delTask">
+         <property name="text">
+          <string>Del</string>
          </property>
         </widget>
        </item>

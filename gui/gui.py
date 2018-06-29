@@ -256,7 +256,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def task(self, task_id=None):
         # print(task_id) # почему task_id объект qt класса если вызывать функцию без аргумента ведь мы указали что task_id = None
-        dialog = uic.loadUi('gui/templates/task_create.ui')
+        dialog = uic.loadUi('gui/templates/task_edit.ui')
         # try:
         #     current_date = QDate.currentDate()
         #     dialog.dateEdit.setDate(current_date)
