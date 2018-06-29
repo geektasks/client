@@ -25,11 +25,18 @@ def default_name(task_list, user_name=None):
     default_names_list = [' '.join(task_list.item(i).text().split(' ')[1:]) for i in range(num_of_tasks)]
     default_names = re.findall(pattern, ''.join(default_names_list))
     task_name = '{}_{}_{}'.format(default_name, user_name, len(default_names))
-
     if task_name not in default_names_list:
         return task_name
     else:
-        task_name = '{}_{}_{}'.format(default_name, user_name, len(default_names) + 1)
+        i = 0
+        while True:
+            task_name = '{}_{}_{}'.format(default_name, user_name, i)
+            # print('+++', task_name)
+            if task_name in default_names_list:
+                i += 1
+                continue
+            else:
+                break
         return task_name
 
 
