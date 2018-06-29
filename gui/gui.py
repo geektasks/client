@@ -401,16 +401,16 @@ class MyWindow(QtWidgets.QMainWindow):
 
         def del_people():
             '''удаляем из списков исполнителей и наблюдателей'''
-            print('del people pressed')
-            try:
-                item_user = dialog.listPeople.currentItem()
+            # print('del people pressed')
+            item_user = dialog.listPeople.currentItem()
+            if item_user:
                 user = item_user.text()
-            except Exception as err:
-                print(err)
-            message = request.deny_access(task_id=task_id, user=user)
-            self.input_queue.put(message)
-            message = request.remove_performer(task_id=task_id, user=user)
-            self.input_queue.put(message)
+                message = request.deny_access(task_id=task_id, user=user)
+                self.input_queue.put(message)
+                message = request.remove_performer(task_id=task_id, user=user)
+                self.input_queue.put(message)
+            else:
+                pass
 
         def delete_task():
             message = request.delete_task(task_id=task_id)
