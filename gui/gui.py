@@ -4,7 +4,7 @@ from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from PyQt5.QtCore import QDate, QTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
 from gui.notification import PopupWindowClass
-from gui.utils import next_day
+from gui.utils import next_day, default_name
 from time import sleep
 
 # from gui.monitor import Monitor
@@ -239,6 +239,7 @@ class MyWindow(QtWidgets.QMainWindow):
         def task_create():
 
             topic = dialog.topic.text()
+            topic = topic if topic else default_name(self.ui.taskList, user_name=handler.data.get('username'))
             description = dialog.description.toPlainText()
             try:
                 date_create = dialog.dateEdit.date().toString('dd.MM.yyyy')
@@ -259,6 +260,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
         dialog.addTask.clicked.connect(task_create)
         dialog.addTask.clicked.connect(dialog.accept)
+        dialog.cancel.clicked.connect(dialog.close)
         dialog.exec()
 
     def task(self, task_id=None):
@@ -401,16 +403,16 @@ class MyWindow(QtWidgets.QMainWindow):
 
         def del_people():
             '''удаляем из списков исполнителей и наблюдателей'''
-            print('del people pressed')
-            try:
-                item_user = dialog.listPeople.currentItem()
+            # print('del people pressed')
+            item_user = dialog.listPeople.currentItem()
+            if item_user:
                 user = item_user.text()
-            except Exception as err:
-                print(err)
-            message = request.deny_access(task_id=task_id, user=user)
-            self.input_queue.put(message)
-            message = request.remove_performer(task_id=task_id, user=user)
-            self.input_queue.put(message)
+                message = request.deny_access(task_id=task_id, user=user)
+                self.input_queue.put(message)
+                message = request.remove_performer(task_id=task_id, user=user)
+                self.input_queue.put(message)
+            else:
+                pass
 
         def delete_task():
             message = request.delete_task(task_id=task_id)
