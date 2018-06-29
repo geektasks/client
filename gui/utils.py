@@ -20,15 +20,17 @@ def default_name(task_list, user_name=None):
     :return:
     '''
     default_name = 'New task'
+    pattern = '(New task_[\w]+)_[1-9]+'
     num_of_tasks = task_list.count()
-    default_names_list = [task_list.item(i).text() for i in range(num_of_tasks)]
-    default_names = re.findall(default_name, ''.join(default_names_list))
+    default_names_list = [' '.join(task_list.item(i).text().split(' ')[1:]) for i in range(num_of_tasks)]
+    default_names = re.findall(pattern, ''.join(default_names_list))
+    task_name = '{}_{}_{}'.format(default_name, user_name, len(default_names))
 
-    if len(default_names) == 0:
-        return default_name if not user_name else default_name + '_' + user_name
+    if task_name not in default_names_list:
+        return task_name
     else:
-        return default_name + '_' + str(len(default_names)) if not user_name else default_name + '_' + str(
-            len(default_names)) + '_' + user_name
+        task_name = '{}_{}_{}'.format(default_name, user_name, len(default_names) + 1)
+        return task_name
 
 
 if __name__ == '__main__':
