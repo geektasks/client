@@ -63,7 +63,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.start_monitor()
 
         self.ui.action_login.triggered.connect(self.sign_in)
-        self.ui.action_exit.triggered.connect(self.exit)
+        self.ui.action_exit.triggered.connect(self.closeEvent)
 
         self.ui.taskList.doubleClicked.connect(lambda: self.task(task_id=None))
 
@@ -94,14 +94,18 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, e):
         result = QtWidgets.QMessageBox.question(self,
-                                                "Confirmation",
-                                                "Do you really want to close window with tasks?",
+                                                "Потверждение",
+                                                "Выйти?",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                                                 QtWidgets.QMessageBox.No)
         if result == QtWidgets.QMessageBox.Yes:
+            self.runThread=False
+            self.close()
+            self.t1.join()
             self.handler.stop()
             e.accept()
             QtWidgets.QWidget.closeEvent(self, e)
+            sys.exit(0)
         else:
             e.ignore()
 
@@ -194,15 +198,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.cancel.clicked.connect(self.sign_in)
         dialog_reg.exec()
 
-    def exit(self):
-        print(0)
-        self.runThread = False
-        print(1)
-        self.t1.join()
-        print(2)
-        self.handler.stop()
-        print(3)
-        sys.exit(0)
+
 
     def sign_in(self):
 
@@ -215,11 +211,15 @@ class MyWindow(QtWidgets.QMainWindow):
             self.fields_checker(name, password, dialog)
             message = request.authorization(name=name, password=password)
             self.input_queue.put(message)
+        def cancel():
+            dialog.close()
+            return 0
+
 
         dialog.ok.clicked.connect(login)
         dialog.registration.clicked.connect(dialog.close)
         dialog.registration.clicked.connect(self.registration)
-        dialog.cancel.clicked.connect(sys.exit)
+        dialog.cancel.clicked.connect(cancel)
         dialog.exec()
 
     def on_createTask_pressed(self):
