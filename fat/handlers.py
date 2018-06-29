@@ -248,6 +248,7 @@ def delete_task(message):
     block_queue()
     send_message(message)
 
+
 @handler.conditional_socket_handler('server response', 'delete task')
 def delete_task(message):
     if message['body']['code'] == 200:
@@ -258,6 +259,7 @@ def delete_task(message):
     data.pop('delete_task')
     put_message(message)
     release_queue()
+
 
 @handler.conditional_queue_handler('action', 'edit task')
 def edit_task(message):
@@ -442,6 +444,27 @@ def assign_performer(message):
     release_queue()
 
 
+@handler.conditional_queue_handler('action', 'remove performer')
+def remove_performer(message):
+    data['remove_performer'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'remove performer')
+def remove_performer(message):
+    if message['body']['code'] == 200:
+        server_task_id = int(data['remove_performer']['body']['id'])
+        local_task_id = data['db'].get_local_task_id(server_id=server_task_id)
+        performer = data['remove_performer']['body']['user']
+        data['db'].remove_performer(task_id=local_task_id, user_name=performer)
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('remove_performer')
+    put_message(message)
+    release_queue()
+
+
 @handler.conditional_queue_handler('action', 'grant access')
 def grant_access(message):
     print('grant access->', message)
@@ -460,6 +483,27 @@ def grant_access(message):
         print(message['body']['code'], message['body']['message'])
 
     data.pop('grant_access')
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'deny access')
+def deny_access(message):
+    data['deny_access'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'deny access')
+def deny_access(message):
+    if message['body']['code'] == 200:
+        server_task_id = int(data['deny_access']['body']['id'])
+        local_task_id = data['db'].get_local_task_id(server_id=server_task_id)
+        watcher = data['deny_access']['body']['user']
+        data['db'].remove_watcher(task_id=local_task_id, user_name=watcher)
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('deny_access')
     put_message(message)
     release_queue()
 

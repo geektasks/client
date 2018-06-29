@@ -137,6 +137,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="delPeople">
+             <property name="text">
+              <string>Del</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="TimeMGM">
              <property name="text">
               <string>TimeMgm</string>
