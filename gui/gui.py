@@ -259,6 +259,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
         dialog.addTask.clicked.connect(task_create)
         dialog.addTask.clicked.connect(dialog.accept)
+        dialog.cancel.clicked.connect(dialog.close)
         dialog.exec()
 
     def task(self, task_id=None):
