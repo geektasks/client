@@ -28,6 +28,8 @@ class MyWindow(QtWidgets.QMainWindow):
     gotAllWatchers = QtCore.pyqtSignal(dict)  ################################
     gotNotification = QtCore.pyqtSignal(dict)
     gotDeletedTask = QtCore.pyqtSignal(dict)
+    gotDenyAccess = QtCore.pyqtSignal(dict)
+    gotRemovePerformer = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -51,7 +53,9 @@ class MyWindow(QtWidgets.QMainWindow):
             'get all performers': self.gotAllPerformers,  ################################
             'get all watchers': self.gotAllWatchers,  ################################
             'notification': self.gotNotification,
-            'delete task': self.gotDeletedTask
+            'delete task': self.gotDeletedTask,
+            'deny access': self.gotDenyAccess,
+            'remove performer': self.gotRemovePerformer
         }
         self.runThread = True
         self.handler = handler
@@ -73,6 +77,8 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotWatcher.connect(self.added_watcher)  ################################
         self.gotNotification.connect(self.notification)
         self.gotDeletedTask.connect(self.task_deleted)
+        self.gotDenyAccess.connect(self.access_denied)
+        self.gotRemovePerformer.connect(self.performer_removed)
         # self.gotAllPerformers.connect(self.update_performers)
         # self.gotAllWatchers.connect(self.update_watchers)
 
@@ -257,7 +263,7 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def task(self, task_id=None):
         # print(task_id) # почему task_id объект qt класса если вызывать функцию без аргумента ведь мы указали что task_id = None
-        dialog = uic.loadUi('gui/templates/task_create.ui')
+        dialog = uic.loadUi('gui/templates/task_edit.ui')
         # try:
         #     current_date = QDate.currentDate()
         #     dialog.dateEdit.setDate(current_date)
@@ -393,6 +399,19 @@ class MyWindow(QtWidgets.QMainWindow):
             dialog.userName.textChanged.connect(search_user)
             dialog.exec()
 
+        def del_people():
+            '''удаляем из списков исполнителей и наблюдателей'''
+            print('del people pressed')
+            try:
+                item_user = dialog.listPeople.currentItem()
+                user = item_user.text()
+            except Exception as err:
+                print(err)
+            message = request.deny_access(task_id=task_id, user=user)
+            self.input_queue.put(message)
+            message = request.remove_performer(task_id=task_id, user=user)
+            self.input_queue.put(message)
+
         def delete_task():
             message = request.delete_task(task_id=task_id)
             self.input_queue.put(message)
@@ -438,6 +457,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.TimeMGM.clicked.connect(time_mgm)
         dialog.delTask.clicked.connect(delete_task)
         dialog.delTask.clicked.connect(dialog.accept)
+        dialog.delPeople.clicked.connect(del_people)
         dialog.exec()
 
     def get_all_task(self):
@@ -527,4 +547,16 @@ class MyWindow(QtWidgets.QMainWindow):
     def task_deleted(self, body):
         if body['code'] == 200:
             self.get_all_task()
+            self.update_console(body)
+
+    @QtCore.pyqtSlot(dict)
+    def access_denied(self, body):
+        if body['code'] == 200:
+            self.get_all_watchers()
+            self.update_console(body)
+
+    @QtCore.pyqtSlot(dict)
+    def performer_removed(self, body):
+        if body['code'] == 200:
+            self.get_all_performers()
             self.update_console(body)
