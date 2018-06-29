@@ -81,14 +81,22 @@ class MyWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, e):
         result = QtWidgets.QMessageBox.question(self,
-                                                "Confirmation",
-                                                "Do you really want to close window with tasks?",
+                                                "Потверждение:",
+                                                "Вы хотети выйти?",
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                                                 QtWidgets.QMessageBox.No)
         if result == QtWidgets.QMessageBox.Yes:
+            self.runThread=False
+            self.t1.join()
+            print(1)
             self.handler.stop()
+            print(2)
             e.accept()
+            print(3)
+            self.setVisible(False)
             QtWidgets.QWidget.closeEvent(self, e)
+            print(4)
+            sys.exit(0)
         else:
             e.ignore()
 
@@ -111,6 +119,8 @@ class MyWindow(QtWidgets.QMainWindow):
             data = False
             if not self.output_queue.empty():
                 data = self.output_queue.get(timeout=0.2)
+            else:
+                sleep(0.5)
             if data:
                 print('обрабатываем в гуи', data)
                 body = data['body']
@@ -125,7 +135,7 @@ class MyWindow(QtWidgets.QMainWindow):
                         print('unknown_response')
                 except Exception as err:
                     print(err)
-            sleep(0.5)
+
 
     ####################################################################################################################
 
@@ -180,14 +190,8 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.cancel.clicked.connect(self.sign_in)
         dialog_reg.exec()
     def exit(self):
-        print(0)
-        self.runThread=False
-        print(1)
-        self.t1.join()
-        print(2)
-        self.handler.stop()
-        print(3)
-        sys.exit(0)
+        self.close()
+
     def sign_in(self):
 
         dialog = uic.loadUi('gui/templates/sign_in.ui')
@@ -305,7 +309,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.addTask.clicked.connect(task_update)
         dialog.addTask.clicked.connect(dialog.accept)
         dialog.cancel.clicked.connect(dialog.close)
-        dialog.TimeMGM.clicked.connect(time_mgm)
+        dialog.TimeMGM.clicked.connect(time_mgm('имя задачи'))
         dialog.exec()
 
     def get_all_task(self):
