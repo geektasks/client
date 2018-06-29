@@ -4,7 +4,7 @@ from PyQt5 import QtCore, QtWidgets, uic, QtGui
 from PyQt5.QtCore import QDate, QTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
 from gui.notification import PopupWindowClass
-from gui.utils import next_day
+from gui.utils import next_day, default_name
 from time import sleep
 
 # from gui.monitor import Monitor
@@ -239,6 +239,7 @@ class MyWindow(QtWidgets.QMainWindow):
         def task_create():
 
             topic = dialog.topic.text()
+            topic = topic if topic else default_name(self.ui.taskList, user_name=handler.data.get('username'))
             description = dialog.description.toPlainText()
             try:
                 date_create = dialog.dateEdit.date().toString('dd.MM.yyyy')
