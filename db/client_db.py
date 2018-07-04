@@ -73,6 +73,8 @@ class ClientDB:
                           server_task_id INTEGER,
                           task_name TEXT,
                           task_description TEXT,
+                          date_create TEXT,
+                          date_deadline TEXT,
                           date_reminder TEXT,
                           time_reminder TEXT,
                           status_id INTEGER,
@@ -216,9 +218,13 @@ class ClientDB:
             status_id,
             user_id,
             task['date_reminder'],
-            task['time_reminder']
+            task['time_reminder'],
+            task['date_create'],
+            task['date_deadline']
         ]
-        self.cursor.execute("""INSERT INTO tasks (server_task_id, task_name, task_description, status_id, user_id, date_reminder, time_reminder) VALUES (?, ?, ?, ?, ?, ?, ?)""", values)
+        self.cursor.execute(
+            """INSERT INTO tasks (server_task_id, task_name, task_description, status_id, user_id, date_reminder, time_reminder, date_create, date_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            values)
         task_id = self.cursor.lastrowid
         if "watchers" in task:
             for watcher in task["watchers"]:
@@ -231,7 +237,6 @@ class ClientDB:
                 self.add_comment(comment, task_id=task_id)
         self.conn.commit()
         return task_id
-
 
     def delete_task(self, server_id):
         '''
@@ -280,7 +285,9 @@ class ClientDB:
             comment["time"],
             user_id
         ]
-        self.cursor.execute("""INSERT INTO comments (server_comment_id, task_id, comment_text, comment_time, user_id) VALUES (?, ?, ?, ?, ?)""", values)
+        self.cursor.execute(
+            """INSERT INTO comments (server_comment_id, task_id, comment_text, comment_time, user_id) VALUES (?, ?, ?, ?, ?)""",
+            values)
         self.conn.commit()
         return self.cursor.lastrowid
 
@@ -391,12 +398,45 @@ class ClientDB:
     # Работа с задачами #
     #####################
     def get_all_tasks(self):
+        # date = {}
+        # self.cursor.execute('''SELECT tasks.server_task_id, tasks.date_reminder, tasks.time_reminder FROM tasks''')
+        self.cursor.execute('''SELECT tasks.task_id, tasks.date_reminder, tasks.time_reminder, tasks.task_name FROM tasks''')
+        task = self.cursor.fetchall()
+        print('task from db <get_all_tasks->>', task)
+        # for i in task:
+        #     date[i[0]] = (i[1], i[2])
+        # return date
+        return task
+
+    def get_all_tasks_of_user(self, username):
+        # print('get all tasks from DB')
         date = {}
-        self.cursor.execute('''SELECT tasks.server_task_id, tasks.date_reminder, tasks.time_reminder FROM tasks''')
-        task= self.cursor.fetchall()
-        print(task)
-        for i in task:
-            date[i[0]] = (i[1],i[2])
+        task_ids = set()
+        self.cursor.execute('''SELECT users.user_id from users WHERE users.user_name=?''', [username])
+        user_id = self.cursor.fetchone()
+        user_id = user_id[0]
+        # print('user_id from db <get_all_tasks->>', user_id)
+        # creator
+        self.cursor.execute('''SELECT tasks.task_id FROM tasks WHERE tasks.user_id=?''', [user_id])
+        creator_tasks = self.cursor.fetchall()
+        # print('creator tasks', creator_tasks)
+        task_ids.update(set(i[0] for i in creator_tasks))
+        # watcher
+        self.cursor.execute('''SELECT watchers.task_id FROM watchers WHERE watchers.user_id=?''', [user_id])
+        watcher_tasks = self.cursor.fetchall()
+        # print('watcers tasks', watcher_tasks)
+        task_ids.update(set(i[0] for i in watcher_tasks))
+        # performer
+        self.cursor.execute('''SELECT performers.task_id FROM performers WHERE performers.user_id=?''', [user_id])
+        performers_tasks = self.cursor.fetchall()
+        # print('performers tasks', performers_tasks)
+        task_ids.update(set(i[0] for i in performers_tasks))
+        # print('tasks ids of user', task_ids, [i for i in task_ids])
+        all_tasks = self.get_all_tasks()
+        # print('all tasks', all_tasks)
+        for task in all_tasks:
+            if task[0] in task_ids:
+                date[task[0]] = (task[1], task[2], task[3])
         return date
 
     def get_tasks(self):
@@ -478,7 +518,6 @@ class ClientDB:
         self.cursor.execute("""UPDATE tasks SET date_reminder = ? WHERE task_id = ?""", [date_reminder, task_id])
         self.conn.commit()
 
-
     def change_time_reminder(self, task_id, time_reminder):
         '''
         изменим время напоминания
@@ -487,6 +526,16 @@ class ClientDB:
         :return:
         '''
         self.cursor.execute("""UPDATE tasks SET time_reminder = ? WHERE task_id = ?""", [time_reminder, task_id])
+        self.conn.commit()
+
+    def change_date_deadline(self, task_id, date_deadline):
+        '''
+        изменим время напоминания
+        :param task_id: локальный идентификатор задачи
+        :param time_reminder: новое время
+        :return:
+        '''
+        self.cursor.execute("""UPDATE tasks SET date_deadline = ? WHERE task_id = ?""", [date_deadline, task_id])
         self.conn.commit()
 
     def remove_watcher(self, task_id, user_name):
