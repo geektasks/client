@@ -223,9 +223,13 @@ def create_task(message):
         task_description = data['create_task']['body'].get('description')
         task_date_reminder = data['create_task']['body'].get('date_reminder')
         task_time_reminder = data['create_task']['body'].get('time_reminder')
+        task_date_create = data['create_task']['body'].get('date_create')
+        task_date_deadline = data['create_task']['body'].get('date_deadline')
         data.pop('create_task')
 
         task = Task(creator=creator, viewer=creator, name=task_name)
+        task._date_create = task_date_create
+        task.date_deadline = task_date_deadline
         task.date_reminder = task_date_reminder
         task.time_reminder = task_time_reminder
         task.description = task_description
@@ -385,6 +389,8 @@ def get_all_tasks(message):
                 data['db'].set_task_id(task_id, server_task_id)
                 data['db'].change_date_reminder(task_id, task_.get('date_reminder'))
                 data['db'].change_time_reminder(task_id, task_.get('time_reminder'))
+                data['db'].change_date_deadline(task_id, task_.get('date_deadline'))
+                data['db'].set_date_create(task_id, task_.get('date_create'))
             else:
                 creator = data['username']
                 task = Task(creator=creator, viewer=creator, name=task_.get('name'))
@@ -392,6 +398,8 @@ def get_all_tasks(message):
                 task.description = task_.get('description')
                 task.date_reminder = task_.get('date_reminder')
                 task.time_reminder = task_.get('time_reminder')
+                task.date_create = task_.get('date_create')
+                task.date_deadline = task_.get('date_deadline')
                 task = task.task_dict
                 print('task->', task)
                 data['db'].add_task(task)

@@ -538,6 +538,16 @@ class ClientDB:
         self.cursor.execute("""UPDATE tasks SET date_deadline = ? WHERE task_id = ?""", [date_deadline, task_id])
         self.conn.commit()
 
+    def set_date_create(self, task_id, date_create):
+        '''
+        изменим время напоминания
+        :param task_id: локальный идентификатор задачи
+        :param time_reminder: новое время
+        :return:
+        '''
+        self.cursor.execute("""UPDATE tasks SET date_create = ? WHERE task_id = ?""", [date_create, task_id])
+        self.conn.commit()
+
     def remove_watcher(self, task_id, user_name):
         """
         Удалить наблюдателя (пользователя, имеющего доступ к задаче) — закрыть доступ
