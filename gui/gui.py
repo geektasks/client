@@ -99,7 +99,7 @@ class MyWindow(QtWidgets.QMainWindow):
                                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                                                 QtWidgets.QMessageBox.No)
         if result == QtWidgets.QMessageBox.Yes:
-            self.runThread=False
+            self.runThread = False
             self.close()
             self.t1.join()
             self.handler.stop()
@@ -198,8 +198,6 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog_reg.cancel.clicked.connect(self.sign_in)
         dialog_reg.exec()
 
-
-
     def sign_in(self):
 
         dialog = uic.loadUi('gui/templates/sign_in.ui')
@@ -211,10 +209,10 @@ class MyWindow(QtWidgets.QMainWindow):
             self.fields_checker(name, password, dialog)
             message = request.authorization(name=name, password=password)
             self.input_queue.put(message)
+
         def cancel():
             dialog.close()
             return 0
-
 
         dialog.ok.clicked.connect(login)
         dialog.registration.clicked.connect(dialog.close)
@@ -284,21 +282,37 @@ class MyWindow(QtWidgets.QMainWindow):
         message = request.get_task_by_id(task_id)
         self.input_queue.put(message)
 
+        # date_create_ = None
+        # date_deadline_ = None
+        # date_reminder_ = None
+        # time_reminder_ = None
+        #
+        # if date_create_:
+        #     print('create->', date_create_)
+        # if date_deadline_:
+        #     print('deadline->', date_deadline_)
+        # if date_reminder_:
+        #     print('reminder->', date_reminder_)
+        # if time_reminder_:
+        #     print('t rem->', time_reminder_)
+
         @QtCore.pyqtSlot(dict)
         def get_task(body):
             dialog.description.setText(body['description'])
             dialog.topic.setText(body['task name'])
 
-            date_create = body.get('date_create')
-            date_deadline = body.get('date_deadline')
-            date_reminder = body.get('date_reminder')
-            time_reminder = body.get('time_reminder')
+            # global date_create_, date_deadline_, date_reminder_, time_reminder_
+
+            date_create_ = body.get('date_create')
+            date_deadline_ = body.get('date_deadline')
+            date_reminder_ = body.get('date_reminder')
+            time_reminder_ = body.get('time_reminder')
 
             try:
-                date_create = QDate.fromString(date_create, 'dd.MM.yyyy')
-                date_deadline = QDate.fromString(date_deadline, 'dd.MM.yyyy')
-                date_reminder = QDate.fromString(date_reminder, 'dd.MM.yyyy')
-                time_reminder = QTime.fromString(time_reminder)
+                date_create = QDate.fromString(date_create_, 'dd.MM.yyyy')
+                date_deadline = QDate.fromString(date_deadline_, 'dd.MM.yyyy')
+                date_reminder = QDate.fromString(date_reminder_, 'dd.MM.yyyy')
+                time_reminder = QTime.fromString(time_reminder_)
 
                 print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
 
@@ -357,18 +371,13 @@ class MyWindow(QtWidgets.QMainWindow):
             message = request.edit_time_reminder(task_id=task_id, time_reminder=time_reminder)
             self.input_queue.put(message)
 
-            # def edit_date_reminder():
-            #     date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
-            #     message = request.edit_date_reminder(task_id=task_id, date_reminder=date_reminder)
-            #     self.input_queue.put(message)
-            #
-            # def edit_time_reminder():
-            #     time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
-            #     message = request.edit_time_reminder(task_id=task_id, time_reminder=time_reminder)
-            #     self.input_queue.put(message)
-            #
-            # dialog.dateEdit_3.dateChanged.connect(edit_date_reminder)
-            # dialog.timeEdit.dateChanged.connect(edit_time_reminder)
+            date_deadline = dialog.dateEdit_2.date().toString('dd.MM.yyyy')
+            message = request.edit_date_deadline(task_id=task_id, date_deadline=date_deadline)
+            self.input_queue.put(message)
+
+        # dialog.dateEdit_2.dateChanged.connect(date_deadline_edit)
+        # dialog.dateEdit_3.dateChanged.connect(date_reminder_edit)
+        # dialog.timeEdit.timeChanged.connect(time_reminder_edit)
 
         def add_people():
             dialog = uic.loadUi('gui/templates/users.ui')

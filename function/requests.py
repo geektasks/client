@@ -99,6 +99,15 @@ def edit_time_reminder(task_id, time_reminder):
     return message
 
 
+def edit_date_deadline(task_id, date_deadline):
+    try:
+        session.session_id = handlers.handler.data['session_id']
+    except Exception as err:
+        print('error->', err)
+    message = session.edit_date_deadline(task_id=task_id, date_deadline=date_deadline).jim_dict
+    return message
+
+
 def get_all_tasks():
     try:
         session.session_id = handlers.handler.data['session_id']

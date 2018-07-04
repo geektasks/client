@@ -180,8 +180,9 @@ def notification(date):
                 date_notification = t[0]
                 time_notification = t[1]
                 server_id = id
+                task_name = t[2]
     if date_notification != '99.99.9999':
-        def timer(date_notification, time_notification, server_id):
+        def timer(date_notification, time_notification, server_id, task_name):
             date_r = date_notification + ' ' + time_notification
             while datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S') > datetime.datetime.now():
                 time.sleep(10)
@@ -193,7 +194,7 @@ def notification(date):
                 },
                 "body": {
                     "code": '',
-                    "message": datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S'),
+                    "message": '{}\n{}'.format(task_name, datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S')),
                     'server_id': server_id
                 }
             }
@@ -201,7 +202,7 @@ def notification(date):
             release_queue()
             notification(date)
 
-        timer = threading.Thread(target=timer, args=(date_notification, time_notification, server_id))
+        timer = threading.Thread(target=timer, args=(date_notification, time_notification, server_id, task_name))
         timer.start()
 
 
@@ -341,6 +342,28 @@ def edit_time_reminder(message):
     release_queue()
 
 
+
+@handler.conditional_queue_handler('action', 'edit date deadline')
+def edit_date_deadline(message):
+    data['edit_date_deadline'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'edit date deadline')
+def edit_date_deadline(message):
+    print('обрабатываем изменение времени')
+    if message['body']['code'] == 200:
+        server_task_id = data['edit_date_deadline']['body'].get('id')
+        local_task_id = data['db'].get_local_task_id(server_task_id)
+        date_deadline = data['edit_date_deadline']['body'].get('date_deadline')
+        data['db'].change_date_deadline(task_id=local_task_id, date_deadline=date_deadline)
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('edit_date_deadline')
+    put_message(message)
+    release_queue()
+
 @handler.conditional_queue_handler('action', 'get all tasks')
 def get_all_tasks(message):
     block_queue()
@@ -373,7 +396,8 @@ def get_all_tasks(message):
                 print('task->', task)
                 data['db'].add_task(task)
 
-    da = data['db'].get_all_tasks()
+    # print('before da')
+    da = data['db'].get_all_tasks_of_user(username=data['username'])
     print('da', da)
     notification(da)
     release_queue()
@@ -387,21 +411,20 @@ def get_task_by_id(message):
 
 @handler.conditional_socket_handler("server response", "get task by id")
 def get_task_by_id(message):
-    '''обновим в бд все server_task_id согласно полученному сообщению'''
     print('get task->', message)
     if message['body']['code'] == 200:
-        creator = data['username']
-        name = message['body'].get('task name')
-        description = message['body'].get('description')
-        date_reminder = message['body'].get('date_reminder')
-        time_reminder = message['body'].get('time_reminder')
-        task = Task(name=name, creator=creator, viewer=creator)
-        task.description = description
-        task.date_reminder = date_reminder
-        task.time_reminder = time_reminder
-        task = task.task_dict
+        # creator = data['username']
+        # name = message['body'].get('task name')
+        # description = message['body'].get('description')
+        # date_reminder = message['body'].get('date_reminder')
+        # time_reminder = message['body'].get('time_reminder')
+        # task = Task(name=name, creator=creator, viewer=creator)
+        # task.description = description
+        # task.date_reminder = date_reminder
+        # task.time_reminder = time_reminder
+        # task = task.task_dict
+        pass
 
-        # data['db'].add_task(task)
     else:
         print(message['body']['code'], message['body']['message'])
 
