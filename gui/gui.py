@@ -1,7 +1,7 @@
 import sys
 import threading
 from PyQt5 import QtCore, QtWidgets, uic, QtGui
-from PyQt5.QtCore import QDate, QTime
+from PyQt5.QtCore import QDate, QTime, QDateTime
 from gui.templates.main_form import Ui_MainWindow as ui_class
 from gui.notification import PopupWindowClass
 from gui.utils import next_day, default_name
@@ -30,6 +30,7 @@ class MyWindow(QtWidgets.QMainWindow):
     gotDeletedTask = QtCore.pyqtSignal(dict)
     gotDenyAccess = QtCore.pyqtSignal(dict)
     gotRemovePerformer = QtCore.pyqtSignal(dict)
+    gotComments = QtCore.pyqtSignal(dict)
 
     def __init__(self, parent=None):
 
@@ -55,7 +56,8 @@ class MyWindow(QtWidgets.QMainWindow):
             'notification': self.gotNotification,
             'delete task': self.gotDeletedTask,
             'deny access': self.gotDenyAccess,
-            'remove performer': self.gotRemovePerformer
+            'remove performer': self.gotRemovePerformer,
+            'get comments': self.gotComments
         }
         self.runThread = True
         self.handler = handler
@@ -79,6 +81,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.gotDeletedTask.connect(self.task_deleted)
         self.gotDenyAccess.connect(self.access_denied)
         self.gotRemovePerformer.connect(self.performer_removed)
+
         # self.gotAllPerformers.connect(self.update_performers)
         # self.gotAllWatchers.connect(self.update_watchers)
 
@@ -282,26 +285,10 @@ class MyWindow(QtWidgets.QMainWindow):
         message = request.get_task_by_id(task_id)
         self.input_queue.put(message)
 
-        # date_create_ = None
-        # date_deadline_ = None
-        # date_reminder_ = None
-        # time_reminder_ = None
-        #
-        # if date_create_:
-        #     print('create->', date_create_)
-        # if date_deadline_:
-        #     print('deadline->', date_deadline_)
-        # if date_reminder_:
-        #     print('reminder->', date_reminder_)
-        # if time_reminder_:
-        #     print('t rem->', time_reminder_)
-
         @QtCore.pyqtSlot(dict)
         def get_task(body):
             dialog.description.setText(body['description'])
             dialog.topic.setText(body['task name'])
-
-            # global date_create_, date_deadline_, date_reminder_, time_reminder_
 
             date_create_ = body.get('date_create')
             date_deadline_ = body.get('date_deadline')
@@ -313,8 +300,6 @@ class MyWindow(QtWidgets.QMainWindow):
                 date_deadline = QDate.fromString(date_deadline_, 'dd.MM.yyyy')
                 date_reminder = QDate.fromString(date_reminder_, 'dd.MM.yyyy')
                 time_reminder = QTime.fromString(time_reminder_)
-
-                print('++++++++++++', date_create, date_deadline, date_reminder, time_reminder)
 
                 dialog.dateEdit.setDate(date_create)
                 dialog.dateEdit_2.setDate(date_deadline)
@@ -460,6 +445,34 @@ class MyWindow(QtWidgets.QMainWindow):
             dialog.SummaryOfWork.valueChanged.connect(sum_work)
             dialog.exec()
 
+        def comments():
+            dialog = uic.loadUi('gui/templates/comments.ui')
+            dialog.task_name.setText(task_name)
+
+            message = request.get_comments(task_id)
+            self.input_queue.put(message)
+
+            @QtCore.pyqtSlot(dict)
+            def show_comments(body):
+                for task_id, comment_id in body['message'].items():
+                    for id, comment in comment_id.items():
+                        print('+++', comment)
+                        dialog.commentsList.addItem(
+                        '@{}: {}\n{}\n'.format(comment.get('user'), comment.get('time'), comment.get('text')))
+
+            def set_comment():
+                comment_text = dialog.commentText.text()
+                if comment_text:
+                    time_ = QDateTime.currentDateTime().toString('dd.MM.yyyy hh:mm:ss')
+                    message = request.create_comment(task_id=task_id, text=comment_text, time=time_)
+                    dialog.commentText.clear()
+                    self.input_queue.put(message)
+
+            dialog.Ok.clicked.connect(set_comment)
+            dialog.Cancel.clicked.connect(dialog.close)
+            self.gotComments.connect(show_comments)
+            dialog.exec()
+
         # self.gotTaskId.connect(get_task)
         dialog.addPeople.clicked.connect(add_people)
         dialog.addTask.clicked.connect(task_update)
@@ -469,6 +482,7 @@ class MyWindow(QtWidgets.QMainWindow):
         dialog.delTask.clicked.connect(delete_task)
         dialog.delTask.clicked.connect(dialog.accept)
         dialog.delPeople.clicked.connect(del_people)
+        dialog.comments.clicked.connect(comments)
         dialog.exec()
 
     def get_all_task(self):

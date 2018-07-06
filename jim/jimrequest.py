@@ -145,6 +145,9 @@ class JIMRequest:
     def delete_comment(self, comment_id):
         return JIMRequest(session_id=self.session_id, id=comment_id)
 
+    def get_comments(self, task_id):
+        return JIMRequest(session_id=self.session_id, id=task_id)
+
     def search_user(self, name):
         return JIMRequest(session_id=self.session_id, name=name)
 

@@ -163,6 +163,11 @@ def delete_comment(comment_id):
     return message
 
 
+def get_comments(task_id):
+    message = session.get_comments(task_id=task_id).jim_dict
+    return message
+
+
 def search_user(name):
     message = session.search_user(name=name).jim_dict
     return message

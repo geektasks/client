@@ -1,6 +1,7 @@
 import fat.handlers_base as handlers_base
 from db.client_db import ClientDB
 from task.task import Task
+from comment.comment import Comment
 from fat.config import connect_address
 import threading
 import datetime
@@ -346,7 +347,6 @@ def edit_time_reminder(message):
     release_queue()
 
 
-
 @handler.conditional_queue_handler('action', 'edit date deadline')
 def edit_date_deadline(message):
     data['edit_date_deadline'] = message
@@ -367,6 +367,7 @@ def edit_date_deadline(message):
     data.pop('edit_date_deadline')
     put_message(message)
     release_queue()
+
 
 @handler.conditional_queue_handler('action', 'get all tasks')
 def get_all_tasks(message):
@@ -561,6 +562,72 @@ def get_all_watchers(message):
 @handler.conditional_socket_handler('server response', 'get all watchers')
 def get_all_watchers(message):
     print('get all watchers->', message)
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'create comment')
+def create_comment(message):
+    data['create_comment'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'create comment')
+def create_comment(message):
+    if message['body']['code'] == 200:
+        print('комментарий гуд!!')
+        user = data['username']
+        text = data['create_comment']['body'].get('text')
+        time = data['create_comment']['body'].get('time')
+        server_comment_id = int(message['body'].get('id'))
+        server_task_id = data['create_comment']['body'].get('id')
+        local_task_id = data['db'].get_local_task_id(server_id=server_task_id)
+        comment = Comment(user=user, text=text, time_=time)
+        comment.id = server_comment_id
+        comment = comment.comment_dict
+        data['db'].add_comment(comment=comment, task_id=local_task_id)
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('create_comment')
+    put_message(message)
+    release_queue()
+
+
+@handler.conditional_queue_handler('action', 'get comments')
+def get_comments(message):
+    data['get_comments'] = message
+    block_queue()
+    send_message(message)
+
+
+@handler.conditional_socket_handler('server response', 'get comments')
+def get_comments(message):
+    if message['body']['code'] == 200:
+        msg = message['body']['message']
+        server_task_id = list(msg.keys())[0]
+        srv_comm_ids_server = [int(key) for key in msg[server_task_id]]
+        local_task_id = data['db'].get_local_task_id(server_id=server_task_id)
+        svr_comm_ids_client = set(int(comment['server_comment_id']) for comment in data['db'].get_comments(local_task_id))
+        print('+++client comments+', svr_comm_ids_client)
+        print('+++server comments+', srv_comm_ids_server)
+        for srv_comm_id, comment in msg[server_task_id].items():
+            user = comment.get('user')
+            text = comment.get('text')
+            time = comment.get('time')
+            comment = Comment(user=user, text=text, time_=time)
+            comment.id = srv_comm_id
+            comment = comment.comment_dict
+
+            if int(srv_comm_id) not in svr_comm_ids_client:
+                # если комментария нет в бд клиента, то добавляем его
+                data['db'].add_comment(comment=comment, task_id=local_task_id)
+            else:
+                # если комментарий есть, то обновим (пока ничего не делаем))
+                pass
+    else:
+        print(message['body']['code'], message['body']['message'])
+    data.pop('get_comments')
     put_message(message)
     release_queue()
 
