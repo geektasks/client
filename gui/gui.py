@@ -348,6 +348,8 @@ class MyWindow(QtWidgets.QMainWindow):
                 message = request.edit_task(task_id=task_id, description=description)
                 self.input_queue.put(message)
 
+            # update date/time
+            # как сделать запросы на изменения времени и даты по необходимости?
             date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
             message = request.edit_date_reminder(task_id=task_id, date_reminder=date_reminder)
             self.input_queue.put(message)
@@ -457,9 +459,8 @@ class MyWindow(QtWidgets.QMainWindow):
                 if body['code'] == 200:
                     for task_id, comment_id in body['message'].items():
                         for id, comment in comment_id.items():
-                            print('+++', comment)
                             dialog.commentsList.addItem(
-                            '@{}: {}\n{}\n'.format(comment.get('user'), comment.get('time'), comment.get('text')))
+                                '@{}: {}\n{}\n'.format(comment.get('user'), comment.get('time'), comment.get('text')))
 
             def set_comment():
                 comment_text = dialog.commentText.text()
