@@ -269,15 +269,15 @@ class ClientDB:
         :return: локальный идентификатор комментария
         """
         user_id = self.add_user(comment["user"])
-        if "task id" in comment:
-            local_task_id = self.get_local_task_id(comment["task id"]) or task_id
+        if "task_id" in comment:
+            local_task_id = self.get_local_task_id(comment["task_id"]) or task_id
         else:
             local_task_id = task_id
         if local_task_id is None:
             raise ClientDataBaseError
         server_comment_id = None
         if "id" in comment:
-            server_comment_id = task["id"]
+            server_comment_id = comment["id"]
         values = [
             server_comment_id,
             local_task_id,
@@ -301,6 +301,17 @@ class ClientDB:
         """
         self.cursor.execute("""UPDATE comments SET server_comment_id = ? WHERE comment_id = ?""", [server_id, local_id])
         self.conn.commit()
+
+    def update_comments(self, task_id, text, time):
+        '''
+
+        :param task_id: server_task_id
+        :return: None
+        '''
+        local_task_id = self.get_local_task_id(task_id)
+        self.cursor.execute("""UPDATE comments SET (comment_text, comment_time) VALUES(?, ?) WHERE task_id = ?""",
+                            [server_id, local_task_id])
+        pass
 
     def get_server_task_id(self, local_id):
         """
@@ -383,14 +394,15 @@ class ClientDB:
         :return: список экземпляров класса «Комментарий»
         """
         self.cursor.execute(
-            """SELECT comments.comment_id, comments.comment_text, comments.comment_time, users.user_name FROM comments INNER JOIN users ON comments.user_id = users.user_id WHERE comments.task_id = ?""",
+            """SELECT comments.comment_id, comments.server_comment_id ,comments.comment_text, comments.comment_time, users.user_name FROM comments INNER JOIN users ON comments.user_id = users.user_id WHERE comments.task_id = ?""",
             [task_id])
         data = self.cursor.fetchall()
         comments = [{
-            "comment id": comment[0],
-            "text": comment[1],
-            "time": comment[2],
-            "user": comment[3]
+            "comment_id": comment[0],
+            "server_comment_id": comment[1],
+            "text": comment[2],
+            "time": comment[3],
+            "user": comment[4]
         } for comment in data]
         return comments
 
@@ -400,7 +412,8 @@ class ClientDB:
     def get_all_tasks(self):
         # date = {}
         # self.cursor.execute('''SELECT tasks.server_task_id, tasks.date_reminder, tasks.time_reminder FROM tasks''')
-        self.cursor.execute('''SELECT tasks.task_id, tasks.date_reminder, tasks.time_reminder, tasks.task_name FROM tasks''')
+        self.cursor.execute(
+            '''SELECT tasks.task_id, tasks.date_reminder, tasks.time_reminder, tasks.task_name FROM tasks''')
         task = self.cursor.fetchall()
         print('task from db <get_all_tasks->>', task)
         # for i in task:
