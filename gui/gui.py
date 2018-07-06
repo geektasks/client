@@ -454,11 +454,12 @@ class MyWindow(QtWidgets.QMainWindow):
 
             @QtCore.pyqtSlot(dict)
             def show_comments(body):
-                for task_id, comment_id in body['message'].items():
-                    for id, comment in comment_id.items():
-                        print('+++', comment)
-                        dialog.commentsList.addItem(
-                        '@{}: {}\n{}\n'.format(comment.get('user'), comment.get('time'), comment.get('text')))
+                if body['code'] == 200:
+                    for task_id, comment_id in body['message'].items():
+                        for id, comment in comment_id.items():
+                            print('+++', comment)
+                            dialog.commentsList.addItem(
+                            '@{}: {}\n{}\n'.format(comment.get('user'), comment.get('time'), comment.get('text')))
 
             def set_comment():
                 comment_text = dialog.commentText.text()
