@@ -144,7 +144,7 @@ def check_user(message):
 
 @handler.conditional_socket_handler('server response', 'check user')
 def check_user(message):
-    print(message)
+    # print(message)
     put_message(message)
     release_queue()
 
@@ -187,7 +187,7 @@ def notification(date):
             date_r = date_notification + ' ' + time_notification
             while datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S') > datetime.datetime.now():
                 time.sleep(10)
-            print(datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S'), 'Ураааааааааа')
+            print('<notification>', datetime.datetime.strptime(date_r, '%d.%m.%Y %H:%M:%S'))
             message = {
                 "head": {
                     "type": "server response",
@@ -209,7 +209,7 @@ def notification(date):
 
 @handler.conditional_queue_handler('action', 'create task')
 def create_task(message):
-    print('create task ->', message)
+    # print('create task ->', message)
     data['create_task'] = message
     block_queue()
     send_message(message)
@@ -236,7 +236,7 @@ def create_task(message):
         task.description = task_description
         task.id = int(server_task_id)
         task = task.task_dict
-        print('task->', task)
+        # print('task->', task)
 
         data['db'].add_task(task)
 
@@ -249,7 +249,7 @@ def create_task(message):
 
 @handler.conditional_queue_handler('action', 'delete task')
 def delete_task(message):
-    print('delete task ->', message)
+    # print('delete task ->', message)
     data['delete_task'] = message
     block_queue()
     send_message(message)
@@ -269,7 +269,7 @@ def delete_task(message):
 
 @handler.conditional_queue_handler('action', 'edit task')
 def edit_task(message):
-    print('edit task ->', message)
+    # print('edit task ->', message)
     data['edit_task'] = message
     block_queue()
     send_message(message)
@@ -277,12 +277,12 @@ def edit_task(message):
 
 @handler.conditional_socket_handler("server response", "edit task")
 def edit_task(message):
-    print('data edit task->', data['edit_task'])
+    # print('data edit task->', data['edit_task'])
     if message['body']['code'] == 200:
         task_name = data['edit_task']['body'].get('name')
         task_description = data['edit_task']['body'].get('description')
         server_task_id = data['edit_task']['body'].get('id')
-        print('task id->', server_task_id)
+        # print('task id->', server_task_id)
         local_task_id = data['db'].get_local_task_id(server_task_id)
 
         if task_name:
@@ -312,7 +312,7 @@ def edit_date_reminder(message):
 
 @handler.conditional_socket_handler('server response', 'edit date reminder')
 def edit_date_reminder(message):
-    print('обрабатываем изменение даты')
+    # print('обрабатываем изменение даты')
     if message['body']['code'] == 200:
         server_task_id = data['edit_date_reminder']['body'].get('id')
         local_task_id = data['db'].get_local_task_id(server_task_id)
@@ -334,7 +334,7 @@ def edit_time_reminder(message):
 
 @handler.conditional_socket_handler('server response', 'edit time reminder')
 def edit_time_reminder(message):
-    print('обрабатываем изменение времени')
+    # print('обрабатываем изменение времени')
     if message['body']['code'] == 200:
         server_task_id = data['edit_time_reminder']['body'].get('id')
         local_task_id = data['db'].get_local_task_id(server_task_id)
@@ -356,7 +356,7 @@ def edit_date_deadline(message):
 
 @handler.conditional_socket_handler('server response', 'edit date deadline')
 def edit_date_deadline(message):
-    print('обрабатываем изменение времени')
+    # print('обрабатываем изменение времени')
     if message['body']['code'] == 200:
         server_task_id = data['edit_date_deadline']['body'].get('id')
         local_task_id = data['db'].get_local_task_id(server_task_id)
@@ -378,7 +378,7 @@ def get_all_tasks(message):
 @handler.conditional_socket_handler("server response", "get all tasks")
 def get_all_tasks(message):
     '''обновим в бд все server_task_id согласно полученному сообщению'''
-    print('get all tasks->', message)
+    # print('get all tasks->', message)
     # da = data['db'].get_all_tasks()
     # notification(da)
     put_message(message)
@@ -393,8 +393,9 @@ def get_all_tasks(message):
                 data['db'].change_date_deadline(task_id, task_.get('date_deadline'))
                 data['db'].set_date_create(task_id, task_.get('date_create'))
             else:
-                creator = data['username']
-                task = Task(creator=creator, viewer=creator, name=task_.get('name'))
+                creator = task_.get('creator')
+                viewer = data['username']
+                task = Task(creator=creator, viewer=viewer, name=task_.get('name'))
                 task.id = int(server_task_id)
                 task.description = task_.get('description')
                 task.date_reminder = task_.get('date_reminder')
@@ -407,7 +408,7 @@ def get_all_tasks(message):
 
     # print('before da')
     da = data['db'].get_all_tasks_of_user(username=data['username'])
-    print('da', da)
+    print('<All tasks of user>', da)
     notification(da)
     release_queue()
 
@@ -420,7 +421,7 @@ def get_task_by_id(message):
 
 @handler.conditional_socket_handler("server response", "get task by id")
 def get_task_by_id(message):
-    print('get task->', message)
+    # print('get task->', message)
     if message['body']['code'] == 200:
         # creator = data['username']
         # name = message['body'].get('task name')
@@ -450,14 +451,14 @@ def search_user(message):
 @handler.conditional_socket_handler("server response", "search user")
 def search_user(message):
     '''обновим в бд все server_task_id согласно полученному сообщению'''
-    print('search user->', message)
+    # print('search user->', message)
     put_message(message)
     release_queue()
 
 
 @handler.conditional_queue_handler('action', 'assign performer')
 def assign_performer(message):
-    print('assign->', message)
+    # print('assign->', message)
     data['assign_performer'] = message
     block_queue()
     send_message(message)
@@ -499,7 +500,7 @@ def remove_performer(message):
 
 @handler.conditional_queue_handler('action', 'grant access')
 def grant_access(message):
-    print('grant access->', message)
+    # print('grant access->', message)
     data['grant_access'] = message
     block_queue()
     send_message(message)
@@ -548,7 +549,7 @@ def get_all_performers(message):
 
 @handler.conditional_socket_handler('server response', 'get all performers')
 def get_all_performers(message):
-    print('get all performers->', message)
+    # print('get all performers->', message)
     put_message(message)
     release_queue()
 
@@ -561,7 +562,7 @@ def get_all_watchers(message):
 
 @handler.conditional_socket_handler('server response', 'get all watchers')
 def get_all_watchers(message):
-    print('get all watchers->', message)
+    # print('get all watchers->', message)
     put_message(message)
     release_queue()
 
@@ -576,7 +577,7 @@ def create_comment(message):
 @handler.conditional_socket_handler('server response', 'create comment')
 def create_comment(message):
     if message['body']['code'] == 200:
-        print('комментарий гуд!!')
+        # print('комментарий гуд!!')
         user = data['username']
         text = data['create_comment']['body'].get('text')
         time = data['create_comment']['body'].get('time')
@@ -609,8 +610,8 @@ def get_comments(message):
         srv_comm_ids_server = [int(key) for key in msg[server_task_id]]
         local_task_id = data['db'].get_local_task_id(server_id=server_task_id)
         svr_comm_ids_client = set(int(comment['server_comment_id']) for comment in data['db'].get_comments(local_task_id))
-        print('+++client comments+', svr_comm_ids_client)
-        print('+++server comments+', srv_comm_ids_server)
+        # print('+++client comments+', svr_comm_ids_client)
+        # print('+++server comments+', srv_comm_ids_server)
         for srv_comm_id, comment in msg[server_task_id].items():
             user = comment.get('user')
             text = comment.get('text')

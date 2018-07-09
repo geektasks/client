@@ -134,11 +134,11 @@ class MyWindow(QtWidgets.QMainWindow):
             else:
                 sleep(0.5)
             if data:
-                print('обрабатываем в гуи', data)
+                # print('обрабатываем в гуи', data)
                 body = data['body']
                 try:
                     if data['head']['name'] in self.NAME:
-                        print('будем обрабатывать', data['head']['name'])
+                        print('будем обрабатывать <GUI>', data['head']['name'])
                         controller = self.NAME.get(data['head']['name'])
                         print('сообщение для вывода в гуи', data)
                         controller.emit(body)
@@ -235,7 +235,7 @@ class MyWindow(QtWidgets.QMainWindow):
             current_time = QTime.currentTime()
             dialog.timeEdit.setTime(current_time)
         except Exception as err:
-            print(err)
+            print('<Create task pressed exception>', err)
 
         def task_create():
 
@@ -248,15 +248,14 @@ class MyWindow(QtWidgets.QMainWindow):
                 date_reminder = dialog.dateEdit_3.date().toString('dd.MM.yyyy')
                 time_reminder = dialog.timeEdit.time().toString('hh:mm:ss')
             except Exception as err:
-                print('************')
-                print(err)
+                print('<Task create exception>', err)
             else:
                 message = request.create_task(name=topic, description=description,
                                               date_create=date_create,
                                               date_deadline=date_deadline,
                                               date_reminder=date_reminder,
                                               time_reminder=time_reminder)
-                print('new task create', message)
+                # print('new task create', message)
                 self.input_queue.put(message)
 
         dialog.addTask.clicked.connect(task_create)
@@ -307,7 +306,7 @@ class MyWindow(QtWidgets.QMainWindow):
                 dialog.timeEdit.setTime(time_reminder)
 
             except Exception as err:
-                print('****trying to set date from string', err)
+                print('<Get task exception>', err)
 
         self.gotTaskId.connect(get_task)
 
@@ -321,14 +320,14 @@ class MyWindow(QtWidgets.QMainWindow):
         def update_performers(body):
             dialog.listPeople.clear()
             for performer in body['performers']:
-                print('performer:', performer)
+                # print('performer:', performer)
                 dialog.listPeople.addItem(performer)
 
         @QtCore.pyqtSlot(dict)  ################################
         def update_watchers(body):
             dialog.listPeople.clear()
             for watcher in body['watchers']:
-                print('watcher:', watcher)
+                # print('watcher:', watcher)
                 dialog.listPeople.addItem(watcher)  # чтобы не дублировать с исполнителями
 
         self.gotAllPerformers.connect(update_performers)  ################################
@@ -420,7 +419,7 @@ class MyWindow(QtWidgets.QMainWindow):
                 dialog.NameOfTask.setText(task_name)
                 dialog.NameOfTask.setAlignment(QtCore.Qt.AlignCenter)
             except Exception as err:
-                print(err)
+                print('TMGM exception', err)
 
             def get_work():
                 interval_of_work = dialog.interval_of_work.value()
@@ -470,7 +469,17 @@ class MyWindow(QtWidgets.QMainWindow):
                     dialog.commentText.clear()
                     self.input_queue.put(message)
 
+            def del_comment():
+                '''пока заглушка'''
+                comment = dialog.commentsList.currentItem()
+                if comment:
+                    comment_text = comment.text()
+                    print('comment to delete', comment_text)
+                else:
+                    print('none')
+
             dialog.Ok.clicked.connect(set_comment)
+            dialog.Delete.clicked.connect(del_comment)
             dialog.Cancel.clicked.connect(dialog.close)
             self.gotComments.connect(show_comments)
             dialog.exec()
@@ -490,11 +499,11 @@ class MyWindow(QtWidgets.QMainWindow):
     def get_all_task(self):
         self.ui.taskList.clear()
         message = request.get_all_tasks()
-        print('get all tasks from gui', message)
+        # print('get all tasks from gui', message)
         self.input_queue.put(message)
 
     def get_all_performers(self):
-        print('отправляю запрос на всех исполнителей')
+        # print('отправляю запрос на всех исполнителей')
         task = self.ui.taskList.currentItem().text()
         task = task.split(' ', maxsplit=1)
         task_id = int(task[0])  # server_task_id
@@ -502,7 +511,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.input_queue.put(message)
 
     def get_all_watchers(self):
-        print('отправляю запрос на всех наблюдателей')
+        # print('отправляю запрос на всех наблюдателей')
         task = self.ui.taskList.currentItem().text()
         task = task.split(' ', maxsplit=1)
         task_id = int(task[0])  # server_task_id

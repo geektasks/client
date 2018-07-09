@@ -304,7 +304,7 @@ class ClientDB:
 
     def update_comments(self, task_id, text, time):
         '''
-
+        не сделан!!!
         :param task_id: server_task_id
         :return: None
         '''
